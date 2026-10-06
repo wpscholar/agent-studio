@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<ruleset name="WP Agents">
+  <description>PSR-12 as the primary coding standard, with WordPress security and i18n sniffs applied selectively. PHPCompatibilityWP covers the PHP version range.</description>
+
+  <file>src</file>
+  <file>wp-agents.php</file>
+  <file>uninstall.php</file>
+  <file>tests</file>
+
+  <arg name="colors"/>
+  <arg name="extensions" value="php"/>
+  <arg value="sp"/>
+
+  <!-- Primary coding standard: PSR-12. -->
+  <rule ref="PSR12"/>
+
+  <!-- Selective WordPress security sniffs (apply everywhere; security applies regardless of code style). -->
+  <rule ref="WordPress.Security"/>
+
+  <!-- Selective WordPress i18n sniffs. -->
+  <rule ref="WordPress.WP.I18n">
+    <properties>
+      <property name="text_domain" type="array" value="wp-agents"/>
+    </properties>
+  </rule>
+
+  <!-- WordPress "capabilities exist" sniff is useful too. -->
+  <rule ref="WordPress.WP.Capabilities"/>
+
+  <!-- The main file and uninstall.php are procedural bootstraps that legitimately mix declarations and side effects. -->
+  <rule ref="PSR1.Files.SideEffects">
+    <exclude-pattern>wp-agents.php</exclude-pattern>
+    <exclude-pattern>uninstall.php</exclude-pattern>
+    <exclude-pattern>tests/bootstrap.php</exclude-pattern>
+  </rule>
+
+  <!-- Tests do not render output or handle requests. -->
+  <rule ref="WordPress.Security">
+    <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+
+  <config name="minimum_supported_wp_version" value="7.0"/>
+  <config name="testVersion" value="8.2-"/>
+</ruleset>

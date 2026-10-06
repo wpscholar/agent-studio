@@ -1,0 +1,18 @@
+includes:
+  - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+  level: 8
+  paths:
+    - src
+    - wp-agents.php
+    - uninstall.php
+  scanFiles:
+    - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+    - vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
+  bootstrapFiles:
+    # Declarations for the WordPress 7.0 AI Client facade, which the
+    # WordPress stubs do not describe. Static analysis only.
+    - stubs/wp-ai-client.php
+  # Domain and Application must stay free of WordPress. The architecture test
+  # in tests/unit/ArchitectureTest.php enforces that at test time.

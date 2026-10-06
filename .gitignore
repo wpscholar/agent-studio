@@ -1,0 +1,17 @@
+node_modules/
+vendor/
+build/
+dist/
+.env
+.env.local
+.env.testing
+.dev.vars
+.phpunit.cache/
+.phpunit.result.cache
+coverage/
+*.log
+.idea/
+.vscode/
+.DS_Store
+playwright-report/
+test-results/

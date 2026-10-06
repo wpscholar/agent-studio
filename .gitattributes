@@ -1,0 +1,4 @@
+# Line-ending normalization (line endings are the only thing .gitattributes
+# is responsible for here; release-zip exclusions live in .distignore).
+* text=auto eol=lf
+*.{png,jpg,jpeg,gif,ico,webp,woff,woff2,ttf,otf,eot,zip,gz,tar} binary

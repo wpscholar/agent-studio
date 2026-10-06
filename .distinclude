@@ -1,0 +1,12 @@
+# .distinclude — optional re-includes for paths .distignore would otherwise drop.
+#
+# rsync evaluates --include-from and --exclude-from together. A path listed here
+# is RE-INCLUDED even if .distignore would have excluded it. Useful when you've
+# excluded a parent directory but need a specific file inside it.
+#
+# Example:
+#   /docs/                  # re-include the directory itself
+#   /docs/upgrading.md      # re-include this specific file
+#
+# Leave this file empty (apart from comments) if you don't need any re-includes.
+# Or delete the file: package-zip.mjs only uses it when it exists.

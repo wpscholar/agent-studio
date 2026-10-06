@@ -1,0 +1,42 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/php:8.3
+    volumes:
+      - ../:/workspace:cached
+    command: sleep infinity
+    depends_on: [db, mailpit]
+    environment:
+      DB_HOST: db
+      WP_HOST: wordpress
+  wordpress:
+    image: wordpress:6.8
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - ../:/var/www/html/wp-content/plugins/wp-agents:cached
+      - wp-data:/var/www/html
+    depends_on: [db]
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db-data:/var/lib/mysql
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+volumes:
+  db-data:
+  wp-data:

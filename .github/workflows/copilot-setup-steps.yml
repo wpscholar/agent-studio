@@ -1,0 +1,38 @@
+# Copilot Setup Steps — prepares the GitHub Copilot coding agent's runner.
+#
+# This workflow installs the same dependencies that `make setup` installs
+# locally inside the Compose stack. The Copilot runner does not need Docker;
+# we install on the runner directly so the agent can navigate the code,
+# run tests, lint, and build without spinning up containers.
+#
+# If you change `composer install` / `npm ci` flags here, also update the
+# Makefile's `setup` target so local + Copilot agree.
+
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+      - run: composer install --prefer-dist --no-interaction
+      - run: npm ci

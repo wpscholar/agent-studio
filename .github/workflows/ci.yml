@@ -1,0 +1,83 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version-file: '.nvmrc', cache: 'npm' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', tools: 'composer:v2', coverage: none }
+      - run: composer install --prefer-dist --no-interaction
+      - run: npm ci
+      - run: composer lint
+      - run: npm run lint
+      - run: npm run format:check
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', tools: 'composer:v2' }
+      - run: composer install --prefer-dist --no-interaction
+      - run: composer analyze
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        wp: ['7.0', '7.1']
+        php: ['8.2', '8.3', '8.4', '8.5']
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s --health-timeout=2s --health-retries=20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '${{ matrix.php }}', tools: 'composer:v2', coverage: none }
+      - run: composer install --prefer-dist --no-interaction
+      - name: Install WP tests
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp }}
+      - run: composer test
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version-file: '.nvmrc', cache: 'npm' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', tools: 'composer:v2' }
+      - run: composer install --no-dev --prefer-dist --no-interaction
+      - run: npm ci
+      - run: npm run build
+      - run: npm run package
+      - uses: actions/upload-artifact@v7
+        with: { name: plugin-zip, path: 'build/*.zip', retention-days: 14 }
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version-file: '.nvmrc', cache: 'npm' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', tools: 'composer:v2' }
+      - run: composer install --prefer-dist --no-interaction
+      - run: npm ci
+      - run: composer audit
+      - run: npm audit --audit-level=high
