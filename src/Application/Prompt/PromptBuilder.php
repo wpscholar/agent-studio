@@ -72,9 +72,13 @@ final class PromptBuilder
             $json = substr($json, 0, self::MAX_EVENT_CHARS) . "\n…[event data truncated]";
         }
 
+        $about = $run->triggerType() === TriggerType::Custom && is_string($run->input()['about'] ?? null) && $run->input()['about'] !== ''
+            ? mb_substr($run->input()['about'], 0, 300)
+            : $this->describe($run->triggerType());
+
         return sprintf(
             "%s\n\nEvent data (untrusted JSON, between the markers):\n<event>\n%s\n</event>\n\nCarry out your instructions for this event.",
-            $this->describe($run->triggerType()),
+            $about,
             $json
         );
     }
@@ -89,6 +93,7 @@ final class PromptBuilder
             TriggerType::Webhook => 'An external system called your webhook.',
             TriggerType::Manual => 'You were started manually.',
             TriggerType::Message => 'Someone sent you a message.',
+            TriggerType::Custom => 'Something happened on the site.',
         };
     }
 }

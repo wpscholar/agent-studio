@@ -54,6 +54,7 @@ use AgentStudio\Application\Prompt\PromptBuilder;
 use AgentStudio\Application\Retention\PruneRunsHandler;
 use AgentStudio\Application\Run\CancelRunHandler;
 use AgentStudio\Application\Schedule\RunSchedulesHandler;
+use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Contracts\AbilityGateway;
 use AgentStudio\Contracts\AgentRepository;
 use AgentStudio\Contracts\Clock;
@@ -420,13 +421,33 @@ final class Plugin
         );
 
         $c->set(
+            TriggerDefinitions::class,
+            static function (): TriggerDefinitions {
+                $definitions = new TriggerDefinitions();
+
+                /**
+                 * Fires when plugin-defined triggers are collected. Register yours with
+                 * $definitions->register( new My_Trigger() ); it then appears in every
+                 * agent's "When should this agent run?" list. Fire it with
+                 * do_action( 'agent_studio_trigger', 'my-plugin/event', $payload ).
+                 *
+                 * @param TriggerDefinitions $definitions The registry.
+                 */
+                do_action('agent_studio_register_triggers', $definitions);
+
+                return $definitions;
+            }
+        );
+
+        $c->set(
             DispatchTriggerHandler::class,
             static fn (Container $c): DispatchTriggerHandler => new DispatchTriggerHandler(
                 $c->get(AgentRepository::class),
                 $c->get(RunRepository::class),
                 $c->get(JobQueue::class),
                 $c->get(RecursionGuard::class),
-                $c->get(Clock::class)
+                $c->get(Clock::class),
+                $c->get(TriggerDefinitions::class)
             )
         );
 
@@ -480,7 +501,10 @@ final class Plugin
         $c->set(PostTypeRegistrar::class, static fn (): PostTypeRegistrar => new PostTypeRegistrar());
         $c->set(
             TriggerHooks::class,
-            static fn (Container $c): TriggerHooks => new TriggerHooks($c->get(DispatchTriggerHandler::class))
+            static fn (Container $c): TriggerHooks => new TriggerHooks(
+                $c->get(DispatchTriggerHandler::class),
+                $c->get(TriggerDefinitions::class)
+            )
         );
         $c->set(
             RunSchedulesHandler::class,
@@ -568,7 +592,8 @@ final class Plugin
                 $c->get(RunRepository::class),
                 $c->get(SkillRepository::class),
                 $c->get(AbilityGateway::class),
-                new AiModelCatalog()
+                new AiModelCatalog(),
+                $c->get(TriggerDefinitions::class)
             )
         );
         $c->set(
