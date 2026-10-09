@@ -19,5 +19,6 @@ parameters:
     # WordPress stubs do not describe. Static analysis only.
     - stubs/wp-ai-client.php
     - stubs/agent-studio-constants.php
+    - stubs/wordpress-secrets.php
   # Domain and Application must stay free of WordPress. The architecture test
   # in tests/unit/ArchitectureTest.php enforces that at test time.

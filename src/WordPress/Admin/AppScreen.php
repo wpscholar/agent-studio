@@ -29,7 +29,8 @@ final class AppScreen
         }
 
         printf(
-            '<div class="wrap agent-studio-app-wrap"><div id="agent-studio-app" data-screen="%1$s"><h1>%2$s</h1><p class="agent-studio-app-loading">%3$s</p><noscript><p>%4$s</p></noscript></div></div>',
+            // WordPress moves admin notices after .wp-header-end; without it they would land inside the app and vanish.
+            '<div class="wrap agent-studio-app-wrap"><hr class="wp-header-end agent-studio-header-end"><div id="agent-studio-app" data-screen="%1$s"><h1>%2$s</h1><p class="agent-studio-app-loading">%3$s</p><noscript><p>%4$s</p></noscript></div></div>',
             esc_attr($this->screen),
             esc_html($this->title),
             esc_html__('Loading…', 'agent-studio'),

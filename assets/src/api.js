@@ -8,10 +8,13 @@ import { __ } from '@wordpress/i18n';
 export function api(path, options = {}) {
   return apiFetch({ path: '/agent-studio/v1/' + path, ...options }).catch(
     (error) => {
-      throw new Error(
+      const failure = new Error(
         (error && error.message) ||
           __('Something went wrong. Please try again.', 'agent-studio'),
       );
+      failure.code = (error && error.code) || '';
+      failure.data = (error && error.data) || {};
+      throw failure;
     },
   );
 }

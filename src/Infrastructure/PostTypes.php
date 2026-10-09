@@ -26,6 +26,12 @@ final class PostTypes
     /** Skills were their own post type before they became knowledge. */
     public const LEGACY_SKILL = 'agent_studio_skill';
 
+    /** Connections to other services, such as MCP servers. */
+    public const CONNECTION = 'agent_studio_conn';
+
+    /** Post meta holding a connection's settings, status and tools as JSON. Never secrets. */
+    public const CONNECTION_META = '_agent_studio_connection';
+
     /** Post meta holding an agent's configuration as JSON. */
     public const AGENT_CONFIG_META = '_agent_studio_config';
 

@@ -10,6 +10,8 @@ Build AI agents inside WordPress. An agent is a set of instructions, something t
 - **Triggers:** a post changes status, a user registers, a comment is posted, a schedule comes round (every hour, day or week at a set time), a signed webhook is called, or you click **Run now** (also available over REST and WP-CLI).
 - **Abilities:** agents use the WordPress Abilities API (6.9+). Anything another plugin registers can be given to an agent. A few starter abilities ship so agents are useful on a plain site: get and search posts, update a post, add a private note, read and moderate comments, look up a user, send an email.
 - **Skills:** reusable SKILL.md-style instructions, managed on **Agents → Skills**. An agent always sees each skill's "when to use it" line and loads the full text only when it needs it. Write skills on that screen, import or download a `SKILL.md`, see which agents use each one, and restore any earlier version.
+- **Connections:** on **Agents → Connections**, paste a service's MCP server address and Agent Studio works out the rest. Open servers connect at once. Protected ones offer **Sign in** (OAuth 2.1 with PKCE, following the MCP authorization spec: it discovers the sign-in server and registers itself when the service allows it) or an API key in whatever header the service wants. The service's tools then appear in every agent's ability list as `mcp-<connection>/<tool>`, for agents only: they are not registered with the Abilities API. A tool counts as "read" only if it says it is read-only; anything else needs approval like any other write. Speaks MCP 2026-07-28 and falls back to the older session handshake for servers that need it.
+- **Secrets:** API keys and tokens never go in ordinary settings. They use the WordPress Secrets API when it exists (proposed for 7.2) and, until then, are encrypted with libsodium in options WordPress does not load on every page. The key comes from `AGENT_STUDIO_SECRETS_KEY` if you define it, otherwise from your `wp-config.php` security keys. Saved secrets move to core automatically once the Secrets API is available.
 - **Permissions:** three capabilities: `agent_studio_manage` (set up agents and skills), `agent_studio_approve` (approve any agent's actions) and `agent_studio_chat` (talk to agents from a linked chat account). Administrators have all three. A role editor can give them to other roles one by one, and the person who set up an agent can approve that agent's actions.
 - **AI:** models are called through the WordPress AI Client (7.0+) with whatever provider you connected. Each agent uses **Automatic** (WordPress picks a connected model that can use the agent's abilities) or one model you choose from your connected providers. Agent Studio holds no API keys.
 - **Approval:** reads run freely. Writes, destructive actions and external effects can pause the run until you approve. Approve from the run screen or `wp agents approve`.
@@ -78,34 +80,35 @@ wp agents prune
 
 Filters and actions (all prefixed `agent_studio_`):
 
-| Hook                                                                    | Purpose                                                                         |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `agent_studio_loaded` (action)                                          | Fires when ready, with the service container.                                   |
-| `agent_studio_manage_capability`                                        | Capability that grants every Agent Studio capability. Default `manage_options`. |
-| `agent_studio_agent_can_use_ability`                                    | Hide an ability from every agent, whatever its allowlist says.                  |
-| `agent_studio_register_starter_abilities`                               | Return `false` to skip the starter abilities.                                   |
-| `agent_studio_allow_email_recipient`                                    | Block recipients of the `send-email` ability.                                   |
-| `agent_studio_expose_abilities_to_mcp`                                  | Make Agent Studio abilities public MCP tools. Default `false`.                  |
-| `agent_studio_trigger_payload`                                          | Change event data before it reaches an agent.                                   |
-| `agent_studio_comment_trigger_types`, `agent_studio_ignored_post_types` | Tune which events can trigger agents.                                           |
-| `agent_studio_agent_templates`                                          | Add or change the admin templates.                                              |
-| `agent_studio_approval_notify_email`                                    | Change who gets approval emails.                                                |
-| `agent_studio_run_retention_days`                                       | Days to keep runs. Default 30.                                                  |
-| `agent_studio_ai_provider`                                              | Pick the provider for agents whose model is set to Automatic.                   |
-| `agent_studio_model_client`                                             | Replace the model client (another runtime, or a fake in tests).                 |
-| `agent_studio_dispatch_failed` (action)                                 | A trigger could not be dispatched.                                              |
+| Hook                                                                    | Purpose                                                                            |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `agent_studio_loaded` (action)                                          | Fires when ready, with the service container.                                      |
+| `agent_studio_manage_capability`                                        | Capability that grants every Agent Studio capability. Default `manage_options`.    |
+| `agent_studio_agent_can_use_ability`                                    | Hide an ability from every agent, whatever its allowlist says.                     |
+| `agent_studio_register_starter_abilities`                               | Return `false` to skip the starter abilities.                                      |
+| `agent_studio_allow_email_recipient`                                    | Block recipients of the `send-email` ability.                                      |
+| `agent_studio_expose_abilities_to_mcp`                                  | Make Agent Studio abilities public MCP tools. Default `false`.                     |
+| `agent_studio_trigger_payload`                                          | Change event data before it reaches an agent.                                      |
+| `agent_studio_comment_trigger_types`, `agent_studio_ignored_post_types` | Tune which events can trigger agents.                                              |
+| `agent_studio_agent_templates`                                          | Add or change the admin templates.                                                 |
+| `agent_studio_approval_notify_email`                                    | Change who gets approval emails.                                                   |
+| `agent_studio_run_retention_days`                                       | Days to keep runs. Default 30.                                                     |
+| `agent_studio_register_connection_types` (action)                       | Add your own kind of connection (implement `Contracts\Connection\ConnectionType`). |
+| `agent_studio_ai_provider`                                              | Pick the provider for agents whose model is set to Automatic.                      |
+| `agent_studio_model_client`                                             | Replace the model client (another runtime, or a fake in tests).                    |
+| `agent_studio_dispatch_failed` (action)                                 | A trigger could not be dispatched.                                                 |
 
 Register your own abilities with `wp_register_ability()`. They appear in the agent editor with a risk label inferred from their annotations (`readonly`, `destructive`); an ability that does not say it is read-only is treated as a write. Set `meta.agent_studio.risk` to `read`, `write`, `destructive` or `external` to override.
 
-Uninstalling removes the run log and settings. Agents and skills are kept unless `AGENT_STUDIO_REMOVE_ALL_DATA` is `true`.
+Uninstalling removes the run log, settings and saved credentials. Agents, skills and connections are kept unless `AGENT_STUDIO_REMOVE_ALL_DATA` is `true`.
 
 ## Architecture
 
 Portable hexagonal layout, following [`wpscholar/standards`](https://github.com/wpscholar/standards):
 
 ```
-src/Domain/          Agents, runs, skills, risk rules. Pure PHP.
-src/Application/     Dispatch, execute, approve, cancel, prune. Pure PHP.
+src/Domain/          Agents, runs, skills, connections, risk rules. Pure PHP.
+src/Application/     Dispatch, execute, approve, MCP client, OAuth, connections. Pure PHP.
 src/Contracts/       Interfaces: repositories, model client, queue, clock…
 src/Infrastructure/  WordPress adapters: posts, wpdb, Abilities API, AI Client…
 src/WordPress/       Hooks, REST, admin screens, CLI, wiring.
@@ -130,7 +133,7 @@ See [`docs/environment.md`](./docs/environment.md), [`docs/testing.md`](./docs/t
 
 ### v1 (built)
 
-Everything above: six triggers including schedules, a model choice per agent, ability allowlists, skills, approvals, run log, signed webhooks, REST and WP-CLI control, starter abilities, templates.
+Everything above: six triggers including schedules, a model choice per agent, ability allowlists, skills, connections to MCP servers, approvals, run log, signed webhooks, REST and WP-CLI control, starter abilities, templates.
 
 Known limits in v1: no settings screen (use filters); one model call loop per run with no memory between runs; agents act as a chosen existing user rather than a dedicated agent identity; runs execute inside WordPress.
 
@@ -151,7 +154,6 @@ Known limits in v1: no settings screen (use filters); one model call loop per ru
 - **Agent-to-agent.** One agent can start another with a bounded hand-off.
 - **Memory.** Things an agent should remember between runs, such as preferences and facts about the site. A memory is saved only when a person adds it or approves one the agent suggests. It belongs to whoever saved it and stays private unless shared. No automatic forgetting or ranking. Managed on a simple Agents → Memory screen rather than the post editor. Stored the way WordPress's proposed Knowledge feature stores memories (title, short description, text, revisions), so it can move to core storage if that ships.
 - **Channels.** Talk to the same agent from somewhere other than WordPress: Slack, Discord, Microsoft Teams, or a chat box on your site. Each channel is set up step by step from Agents → Channels, and plugins can add their own channel types to that screen.
-- **Connections.** Connect an external MCP server in a few clicks. Its tools appear as abilities you can give to agents, with the same risk labels and approvals. WordPress is the MCP client here, the opposite of the usual setup.
 - **Expose agents over MCP.** Let other MCP clients start chosen agents.
 
 ### v3: scale

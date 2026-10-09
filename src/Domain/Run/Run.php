@@ -153,7 +153,7 @@ final class Run
     public function start(int $now): void
     {
         if ($this->status !== RunStatus::Queued) {
-            throw InvalidRunTransition::between($this->status, 'start'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'start');
         }
 
         $this->status = RunStatus::Running;
@@ -163,7 +163,7 @@ final class Run
     public function awaitApproval(PendingApproval $pending, int $now): void
     {
         if ($this->status !== RunStatus::Running) {
-            throw InvalidRunTransition::between($this->status, 'wait for approval'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'wait for approval');
         }
 
         $this->status = RunStatus::AwaitingApproval;
@@ -182,7 +182,7 @@ final class Run
     public function resume(): void
     {
         if ($this->status !== RunStatus::AwaitingApproval) {
-            throw InvalidRunTransition::between($this->status, 'resume'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'resume');
         }
 
         $this->status = RunStatus::Queued;
@@ -192,7 +192,7 @@ final class Run
     public function complete(string $output, int $now): void
     {
         if ($this->status !== RunStatus::Running) {
-            throw InvalidRunTransition::between($this->status, 'complete'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'complete');
         }
 
         $this->status = RunStatus::Completed;
@@ -203,7 +203,7 @@ final class Run
     public function fail(string $error, int $now): void
     {
         if ($this->status->isTerminal()) {
-            throw InvalidRunTransition::between($this->status, 'fail'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'fail');
         }
 
         $this->status = RunStatus::Failed;
@@ -216,7 +216,7 @@ final class Run
     public function cancel(int $now): void
     {
         if ($this->status !== RunStatus::Queued && $this->status !== RunStatus::AwaitingApproval) {
-            throw InvalidRunTransition::between($this->status, 'be cancelled'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'be cancelled');
         }
 
         $this->status = RunStatus::Cancelled;
@@ -231,7 +231,7 @@ final class Run
     public function skip(string $reason, int $now): void
     {
         if ($this->status !== RunStatus::Queued) {
-            throw InvalidRunTransition::between($this->status, 'be skipped'); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; callers escape on display.
+            throw InvalidRunTransition::between($this->status, 'be skipped');
         }
 
         $this->status = RunStatus::Skipped;

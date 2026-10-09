@@ -5,6 +5,24 @@ declare(strict_types=1);
 namespace AgentStudio\WordPress;
 
 use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Connections\ConnectionAbilityGateway;
+use AgentStudio\Application\Connections\ConnectionService;
+use AgentStudio\Application\Connections\ConnectionTypes;
+use AgentStudio\Application\Execute\CompositeAbilityGateway;
+use AgentStudio\Application\Mcp\McpClient;
+use AgentStudio\Application\OAuth\OAuthClient;
+use AgentStudio\Application\OAuth\OAuthDiscovery;
+use AgentStudio\Contracts\ConnectionRepository;
+use AgentStudio\Contracts\Http\HttpClient;
+use AgentStudio\Contracts\PendingSignInStore;
+use AgentStudio\Contracts\SecretStore;
+use AgentStudio\Infrastructure\Secrets\SecretStoreFactory;
+use AgentStudio\Infrastructure\TransientPendingSignInStore;
+use AgentStudio\Infrastructure\WordPressConnectionRepository;
+use AgentStudio\Infrastructure\WordPressHttpClient;
+use AgentStudio\WordPress\Connections\McpConnectionType;
+use AgentStudio\WordPress\Hooks\ConnectionHooks;
+use AgentStudio\WordPress\Rest\ConnectionsController;
 use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
 use AgentStudio\Application\Execute\ExecuteRunHandler;
 use AgentStudio\Application\Execute\ToolExecutor;
@@ -78,6 +96,8 @@ final class Plugin
         $container->get(WebhookController::class)->register();
         $container->get(AgentsController::class)->register();
         $container->get(SkillsController::class)->register();
+        $container->get(ConnectionsController::class)->register();
+        $container->get(ConnectionHooks::class)->register();
         $container->get(AgentAbilities::class)->register();
         $container->get(StarterAbilities::class)->register();
 
@@ -112,12 +132,14 @@ final class Plugin
         WorkerHooks::schedulePruning();
         add_filter('cron_schedules', [ScheduleHooks::class, 'addInterval']);
         ScheduleHooks::scheduleChecks();
+        ConnectionHooks::schedule();
     }
 
     public static function deactivate(): void
     {
         wp_clear_scheduled_hook(WorkerHooks::PRUNE_HOOK);
         wp_clear_scheduled_hook(ScheduleHooks::HOOK);
+        wp_clear_scheduled_hook(ConnectionHooks::HOOK);
     }
 
     public static function container(): Container
@@ -143,7 +165,74 @@ final class Plugin
         $c->set(WordPressSkillRepository::class, static fn (): WordPressSkillRepository => new WordPressSkillRepository());
         $c->set(SkillRepository::class, static fn (Container $c): SkillRepository => $c->get(WordPressSkillRepository::class));
         $c->set(RunRepository::class, static fn (): RunRepository => new WpdbRunRepository());
-        $c->set(AbilityGateway::class, static fn (): AbilityGateway => new AbilitiesApiGateway());
+        $c->set(
+            AbilityGateway::class,
+            static fn (Container $c): AbilityGateway => new CompositeAbilityGateway(
+                new AbilitiesApiGateway(),
+                $c->get(ConnectionAbilityGateway::class)
+            )
+        );
+        $c->set(SecretStore::class, static fn (): SecretStore => SecretStoreFactory::make());
+        $c->set(HttpClient::class, static fn (): HttpClient => new WordPressHttpClient());
+        $c->set(PendingSignInStore::class, static fn (): PendingSignInStore => new TransientPendingSignInStore());
+        $c->set(ConnectionRepository::class, static fn (): ConnectionRepository => new WordPressConnectionRepository());
+        $c->set(
+            McpClient::class,
+            static fn (Container $c): McpClient => new McpClient($c->get(HttpClient::class), 'Agent Studio', AGENT_STUDIO_VERSION)
+        );
+        $c->set(
+            ConnectionTypes::class,
+            static function (Container $c): ConnectionTypes {
+                $types = new ConnectionTypes();
+                $types->register(new McpConnectionType($c->get(McpClient::class)));
+
+                /**
+                 * Fires when the kinds of connection are collected. Register your own
+                 * with $types->register( new My_Connection_Type() ); it then appears
+                 * on the Connections screen and its tools are offered to agents.
+                 *
+                 * @param ConnectionTypes $types The registry.
+                 */
+                do_action('agent_studio_register_connection_types', $types);
+
+                return $types;
+            }
+        );
+        $c->set(
+            ConnectionService::class,
+            static fn (Container $c): ConnectionService => new ConnectionService(
+                $c->get(ConnectionRepository::class),
+                $c->get(ConnectionTypes::class),
+                $c->get(SecretStore::class),
+                new OAuthDiscovery($c->get(HttpClient::class)),
+                new OAuthClient($c->get(HttpClient::class)),
+                $c->get(PendingSignInStore::class),
+                $c->get(Clock::class)
+            )
+        );
+        $c->set(
+            ConnectionAbilityGateway::class,
+            static fn (Container $c): ConnectionAbilityGateway => new ConnectionAbilityGateway(
+                $c->get(ConnectionRepository::class),
+                $c->get(ConnectionService::class)
+            )
+        );
+        $c->set(
+            ConnectionsController::class,
+            static fn (Container $c): ConnectionsController => new ConnectionsController(
+                $c->get(ConnectionRepository::class),
+                $c->get(ConnectionService::class),
+                $c->get(ConnectionTypes::class),
+                $c->get(AgentRepository::class)
+            )
+        );
+        $c->set(
+            ConnectionHooks::class,
+            static fn (Container $c): ConnectionHooks => new ConnectionHooks(
+                $c->get(ConnectionRepository::class),
+                $c->get(ConnectionService::class)
+            )
+        );
         $c->set(ScheduleState::class, static fn (): ScheduleState => new OptionScheduleState());
 
         $c->set(

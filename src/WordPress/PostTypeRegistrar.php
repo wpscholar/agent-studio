@@ -110,6 +110,30 @@ final class PostTypeRegistrar
             ]
         );
 
+        register_post_type(
+            PostTypes::CONNECTION,
+            [
+                'labels' => [
+                    'name' => __('Connections', 'agent-studio'),
+                    'singular_name' => __('Connection', 'agent-studio'),
+                ],
+                'description' => __('Other services agents can use. Managed on the Agents → Connections screen.', 'agent-studio'),
+                'public' => false,
+                'show_ui' => false,
+                'show_in_rest' => false,
+                'supports' => ['title'],
+                'has_archive' => false,
+                'rewrite' => false,
+                'query_var' => false,
+                // Settings only; secrets live in the secret store, but there is nothing useful to export without them.
+                'can_export' => false,
+                'capabilities' => $this->capabilities(),
+                // Never turn this on: with these capabilities it would make the manage capability
+                // behave like a per-post capability for every check on the site.
+                'map_meta_cap' => false,
+            ]
+        );
+
         $this->migrateLegacySkills();
     }
 
