@@ -7,7 +7,7 @@ Build AI agents inside WordPress. An agent is a set of instructions, something t
 ## What v1 does
 
 - **Agents** are created in the WordPress admin: a name, plain-language instructions, triggers, an ability allowlist, optional skills, and safety settings.
-- **Triggers:** a post changes status, a user registers, a comment is posted, a schedule comes round (every hour, day or week at a set time), a signed webhook is called, or you click **Run now** (also available over REST and WP-CLI).
+- **Triggers:** a post changes status, a user registers, a comment is posted, a schedule comes round (every hour, day or week at a set time), a signed webhook is called, someone messages the agent in a channel, an event another plugin defines (with its own filters), or you click **Run now** (also available over REST and WP-CLI).
 - **Abilities:** agents use the WordPress Abilities API (6.9+). Anything another plugin registers can be given to an agent. A few starter abilities ship so agents are useful on a plain site: get and search posts, update a post, add a private note, read and moderate comments, look up a user, send an email.
 - **Skills:** reusable SKILL.md-style instructions, managed on **Agents → Skills**. An agent always sees each skill's "when to use it" line and loads the full text only when it needs it. Write skills on that screen, import or download a `SKILL.md`, see which agents use each one, and restore any earlier version.
 - **Connections:** on **Agents → Connections**, paste a service's MCP server address and Agent Studio works out the rest. Open servers connect at once. Protected ones offer **Sign in** (OAuth 2.1 with PKCE, following the MCP authorization spec: it discovers the sign-in server and registers itself when the service allows it) or an API key in whatever header the service wants. The service's tools then appear in every agent's ability list as `mcp-<connection>/<tool>`, for agents only: they are not registered with the Abilities API. A tool counts as "read" only if it says it is read-only; anything else needs approval like any other write. Speaks MCP 2026-07-28 and falls back to the older session handshake for servers that need it.
@@ -82,26 +82,27 @@ wp agents prune
 
 Filters and actions (all prefixed `agent_studio_`):
 
-| Hook                                                                    | Purpose                                                                            |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `agent_studio_loaded` (action)                                          | Fires when ready, with the service container.                                      |
-| `agent_studio_manage_capability`                                        | Capability that grants every Agent Studio capability. Default `manage_options`.    |
-| `agent_studio_agent_can_use_ability`                                    | Hide an ability from every agent, whatever its allowlist says.                     |
-| `agent_studio_register_starter_abilities`                               | Return `false` to skip the starter abilities.                                      |
-| `agent_studio_allow_email_recipient`                                    | Block recipients of the `send-email` ability.                                      |
-| `agent_studio_expose_abilities_to_mcp`                                  | Make Agent Studio abilities public MCP tools. Default `false`.                     |
-| `agent_studio_trigger_payload`                                          | Change event data before it reaches an agent.                                      |
-| `agent_studio_comment_trigger_types`, `agent_studio_ignored_post_types` | Tune which events can trigger agents.                                              |
-| `agent_studio_agent_templates`                                          | Add or change the admin templates.                                                 |
-| `agent_studio_approval_notify_email`                                    | Change who gets approval emails.                                                   |
-| `agent_studio_run_retention_days`                                       | Days to keep runs. Default 30.                                                     |
-| `agent_studio_register_channel_types` (action)                          | Add your own kind of channel (implement `Contracts\Channel\ChannelType`).          |
-| `agent_studio_register_connection_types` (action)                       | Add your own kind of connection (implement `Contracts\Connection\ConnectionType`). |
-| `agent_studio_ai_provider`                                              | Pick the provider for agents whose model is set to Automatic.                      |
-| `agent_studio_model_client`                                             | Replace the model client (another runtime, or a fake in tests).                    |
-| `agent_studio_dispatch_failed` (action)                                 | A trigger could not be dispatched.                                                 |
+| Hook                                                                    | Purpose                                                                                           |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `agent_studio_loaded` (action)                                          | Fires when ready, with the service container.                                                     |
+| `agent_studio_manage_capability`                                        | Capability that grants every Agent Studio capability. Default `manage_options`.                   |
+| `agent_studio_agent_can_use_ability`                                    | Hide an ability from every agent, whatever its allowlist says.                                    |
+| `agent_studio_register_starter_abilities`                               | Return `false` to skip the starter abilities.                                                     |
+| `agent_studio_allow_email_recipient`                                    | Block recipients of the `send-email` ability.                                                     |
+| `agent_studio_expose_abilities_to_mcp`                                  | Make Agent Studio abilities public MCP tools. Default `false`.                                    |
+| `agent_studio_trigger_payload`                                          | Change event data before it reaches an agent.                                                     |
+| `agent_studio_comment_trigger_types`, `agent_studio_ignored_post_types` | Tune which events can trigger agents.                                                             |
+| `agent_studio_agent_templates`                                          | Add or change the admin templates.                                                                |
+| `agent_studio_approval_notify_email`                                    | Change who gets approval emails.                                                                  |
+| `agent_studio_run_retention_days`                                       | Days to keep runs. Default 30.                                                                    |
+| `agent_studio_register_triggers` (action)                               | Add your own event kind, then fire it with `do_action( 'agent_studio_trigger', $key, $payload )`. |
+| `agent_studio_register_channel_types` (action)                          | Add your own kind of channel (implement `Contracts\Channel\ChannelType`).                         |
+| `agent_studio_register_connection_types` (action)                       | Add your own kind of connection (implement `Contracts\Connection\ConnectionType`).                |
+| `agent_studio_ai_provider`                                              | Pick the provider for agents whose model is set to Automatic.                                     |
+| `agent_studio_model_client`                                             | Replace the model client (another runtime, or a fake in tests).                                   |
+| `agent_studio_dispatch_failed` (action)                                 | A trigger could not be dispatched.                                                                |
 
-Register your own abilities with `wp_register_ability()`. They appear in the agent editor with a risk label inferred from their annotations (`readonly`, `destructive`); an ability that does not say it is read-only is treated as a write. Set `meta.agent_studio.risk` to `read`, `write`, `destructive` or `external` to override.
+See [`docs/extending.md`](./docs/extending.md) for examples of each. Register your own abilities with `wp_register_ability()`. They appear in the agent editor with a risk label inferred from their annotations (`readonly`, `destructive`); an ability that does not say it is read-only is treated as a write. Set `meta.agent_studio.risk` to `read`, `write`, `destructive` or `external` to override.
 
 Uninstalling removes the run log, conversations, settings and saved credentials. Agents, skills, connections and channels are kept unless `AGENT_STUDIO_REMOVE_ALL_DATA` is `true`.
 

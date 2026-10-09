@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AgentStudio\WordPress\Admin;
 
 use WP_Post;
+use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Contracts\AbilityGateway;
 use AgentStudio\Contracts\AgentRepository;
 use AgentStudio\Contracts\RunRepository;
@@ -13,6 +14,7 @@ use AgentStudio\Domain\Agent\AgentStatus;
 use AgentStudio\Domain\Agent\ApprovalMode;
 use AgentStudio\Domain\Agent\Schedule;
 use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Setup\SetupField;
 use AgentStudio\Domain\Run\RunStatus;
 use AgentStudio\Infrastructure\AgentConfigMapper;
 use AgentStudio\Infrastructure\AiModelCatalog;
@@ -34,6 +36,7 @@ final class AgentEditor
         private readonly SkillRepository $skills,
         private readonly AbilityGateway $abilities,
         private readonly AiModelCatalog $models,
+        private readonly ?TriggerDefinitions $definitions = null,
     ) {
     }
 
@@ -101,7 +104,8 @@ final class AgentEditor
         $config = $this->config($post);
         $byType = [];
         foreach ($config['triggers'] as $trigger) {
-            $byType[$trigger['type']] = $trigger['config'];
+            $kind = $trigger['type'] === TriggerType::Custom->value && is_string($trigger['config']['kind'] ?? null) ? $trigger['config']['kind'] : '';
+            $byType[$kind !== '' ? 'custom:' . $kind : $trigger['type']] = $trigger['config'];
         }
 
         $rows = [
@@ -169,7 +173,77 @@ final class AgentEditor
             echo '</div>';
         }
 
+        $this->customTriggers($byType);
+
         echo '</div>';
+    }
+
+    /**
+     * Events other plugins defined, each with the filter fields that plugin asks for.
+     *
+     * @param array<string, array<string, mixed>> $byType
+     */
+    private function customTriggers(array $byType): void
+    {
+        foreach ($this->definitions?->all() ?? [] as $definition) {
+            $id = 'custom:' . $definition->key();
+            $enabled = isset($byType[$id]);
+            $saved = $byType[$id] ?? [];
+            $name = 'agent_studio[triggers][' . $id . ']';
+
+            echo '<div class="agent-studio-trigger' . ($enabled ? ' is-on' : '') . '">';
+            printf(
+                '<label class="agent-studio-trigger__title"><input type="checkbox" name="%1$s[on]" value="1" data-agent-studio-trigger %2$s> <strong>%3$s</strong></label>',
+                esc_attr($name),
+                checked($enabled, true, false),
+                esc_html($definition->label())
+            );
+            echo '<p class="description">' . esc_html($definition->description()) . '</p>';
+
+            if ($definition->fields() !== []) {
+                echo '<div class="agent-studio-trigger__fields">';
+                foreach ($definition->fields() as $field) {
+                    $this->setupField($name . '[' . $field->key . ']', $field, is_scalar($saved[$field->key] ?? null) ? (string) $saved[$field->key] : $field->default);
+                }
+                echo '</div>';
+            }
+
+            echo '</div>';
+        }
+    }
+
+    private function setupField(string $name, SetupField $field, string $value): void
+    {
+        echo '<label>' . esc_html($field->label);
+
+        switch ($field->type) {
+            case SetupField::SELECT:
+                echo ' <select name="' . esc_attr($name) . '">';
+                foreach ($field->options as $optionValue => $optionLabel) {
+                    printf('<option value="%s" %s>%s</option>', esc_attr((string) $optionValue), selected($value, (string) $optionValue, false), esc_html($optionLabel));
+                }
+                echo '</select>';
+                break;
+            case SetupField::TOGGLE:
+                printf(' <input type="checkbox" name="%s" value="1" %s>', esc_attr($name), checked($value, '1', false));
+                break;
+            case SetupField::TEXTAREA:
+                printf(' <textarea name="%s" rows="3" class="large-text" placeholder="%s">%s</textarea>', esc_attr($name), esc_attr($field->placeholder), esc_textarea($value));
+                break;
+            default:
+                printf(
+                    ' <input type="%s" class="regular-text" name="%s" value="%s" placeholder="%s">',
+                    $field->type === SetupField::URL ? 'url' : 'text',
+                    esc_attr($name),
+                    esc_attr($value),
+                    esc_attr($field->placeholder)
+                );
+        }
+
+        if ($field->help !== '') {
+            echo '<span class="description">' . esc_html($field->help) . '</span>';
+        }
+        echo '</label>';
     }
 
     /**
@@ -507,6 +581,10 @@ final class AgentEditor
             }
 
             unset($fields['on']);
+            if (str_starts_with((string) $type, 'custom:')) {
+                $triggers[] = ['type' => TriggerType::Custom->value, 'config' => ['kind' => substr((string) $type, 7)] + $fields];
+                continue;
+            }
             $triggers[] = ['type' => (string) $type, 'config' => $fields];
         }
 
@@ -576,7 +654,12 @@ final class AgentEditor
         }
 
         if ($column === 'agent_studio_triggers') {
-            $labels = array_map(static fn ($trigger): string => Labels::trigger($trigger->type), $agent->triggers);
+            $labels = array_map(
+                fn ($trigger): string => $trigger->type === TriggerType::Custom
+                    ? ($this->definitions?->get($trigger->kind())?->label() ?? Labels::trigger($trigger->type))
+                    : Labels::trigger($trigger->type),
+                $agent->triggers
+            );
             echo esc_html($labels === [] ? __('Only when run by hand', 'agent-studio') : implode(', ', $labels));
         }
 

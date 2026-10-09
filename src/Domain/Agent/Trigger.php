@@ -40,7 +40,25 @@ final class Trigger
             TriggerType::UserRegistered => $this->listAllowsAny('roles', self::strings($payload['roles'] ?? [])),
             TriggerType::CommentPosted => $this->listAllows('post_types', self::string($payload['post_type'] ?? '')),
             TriggerType::Schedule, TriggerType::Webhook, TriggerType::Manual, TriggerType::Message => true,
+            // The plugin that defines the event checks its own filters on top of this.
+            TriggerType::Custom => $this->kind() !== '' && $this->kind() === ($payload['trigger'] ?? null),
         };
+    }
+
+    /**
+     * For custom triggers: which plugin-defined event, like "my-plugin/order-placed".
+     */
+    public function kind(): string
+    {
+        return is_string($this->config['kind'] ?? null) ? $this->config['kind'] : '';
+    }
+
+    /**
+     * Two triggers of one agent are the same trigger when they have the same type (and, for custom ones, the same kind).
+     */
+    public function identity(): string
+    {
+        return $this->type === TriggerType::Custom ? 'custom:' . $this->kind() : $this->type->value;
     }
 
     /**

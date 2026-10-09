@@ -71,3 +71,9 @@ Gutenberg is experimenting with a `wp_knowledge` post type, typed by a `wp_knowl
 - Chat text Agent Studio itself writes goes through `Contracts\Channel\ChannelPhrases`, so it is translated even though the Application layer has no WordPress i18n.
 - Some channel types need the channel to exist before setup can finish (Slack's app manifest must contain this channel's own addresses). They implement `Contracts\Channel\GuidedSetup`: the Add screen saves the name and agent, and the channel's page shows the type's follow-up steps (links, fields, a Connect button) until it is switched on. Types connected by signing in implement `Contracts\Channel\AuthorizesWithOAuth`; `ChannelService::beginAuthorization()`/`finishAuthorization()` handle the single-use state (bound to the user), the return address (`admin-post.php?action=agent_studio_channel_connected`) and storing the returned secrets.
 - Slack checks every request with the app's signing secret (`v0` HMAC, five-minute window). The one exception is Slack's URL check while the app is being created, before the signing secret is saved: the challenge is echoed and nothing else happens.
+
+## Plugin-defined triggers
+
+- `TriggerType::Custom` triggers carry the event key in their config (`kind`). `Contracts\Trigger\TriggerDefinition` (registered on `agent_studio_register_triggers`) gives the label, filter fields and a `matches()` check; `DispatchTriggerHandler` applies it on top of the Domain's key match, so the Domain stays free of plugin code.
+- Plugins fire events with `do_action( 'agent_studio_trigger', $key, $payload, $dedupe_key )`. The payload gets the event key (`trigger`) and the definition's one-line `about`, which the agent sees as the first line; the rest stays inside the untrusted event block.
+- See [`extending.md`](./extending.md) for examples of every extension point.

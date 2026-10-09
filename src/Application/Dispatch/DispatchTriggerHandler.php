@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AgentStudio\Application\Dispatch;
 
+use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Contracts\AgentRepository;
 use AgentStudio\Contracts\Clock;
 use AgentStudio\Contracts\JobQueue;
@@ -27,6 +28,7 @@ final class DispatchTriggerHandler
         private readonly JobQueue $queue,
         private readonly RecursionGuard $guard,
         private readonly Clock $clock,
+        private readonly ?TriggerDefinitions $definitions = null,
     ) {
     }
 
@@ -60,6 +62,35 @@ final class DispatchTriggerHandler
         return $this->agents->findActiveByTrigger($event->type);
     }
 
+    /**
+     * Plugin-defined events also have to pass the agent's filters, which only the plugin understands.
+     */
+    private function customFiltersMatch(Agent $agent, TriggerEvent $event): bool
+    {
+        if ($event->type !== TriggerType::Custom) {
+            return true;
+        }
+
+        $kind = is_string($event->payload['trigger'] ?? null) ? $event->payload['trigger'] : '';
+        $definition = $this->definitions?->get($kind);
+        if ($definition === null) {
+            return false;
+        }
+
+        foreach ($agent->triggers as $trigger) {
+            if ($trigger->type === TriggerType::Custom && $trigger->kind() === $kind) {
+                $config = array_map(
+                    static fn ($value): string => is_scalar($value) ? (string) $value : '',
+                    array_diff_key($trigger->config, ['kind' => true])
+                );
+
+                return $definition->matches($config, $event->payload);
+            }
+        }
+
+        return false;
+    }
+
     private function dispatchTo(Agent $agent, TriggerEvent $event): AgentDispatch
     {
         $manual = $event->type === TriggerType::Manual;
@@ -67,7 +98,7 @@ final class DispatchTriggerHandler
         // Manual runs are explicit requests, so they ignore status and filters.
         // Messages come through a channel set up for this agent, so there is no
         // trigger to match, but a paused agent does not answer.
-        $matches = $event->type === TriggerType::Message || $agent->matches($event);
+        $matches = $event->type === TriggerType::Message || ($agent->matches($event) && $this->customFiltersMatch($agent, $event));
         if (! $manual && (! $agent->isActive() || ! $matches)) {
             return new AgentDispatch($agent->id, DispatchOutcome::Skipped);
         }

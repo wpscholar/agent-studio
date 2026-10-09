@@ -8,6 +8,7 @@ use Throwable;
 use WP_Comment;
 use WP_Post;
 use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Domain\Agent\TriggerEvent;
 use AgentStudio\Domain\Agent\TriggerType;
 use AgentStudio\Infrastructure\PostTypes;
@@ -20,8 +21,10 @@ final class TriggerHooks
 {
     private const MAX_COMMENT_CHARS = 2000;
 
-    public function __construct(private readonly DispatchTriggerHandler $dispatch)
-    {
+    public function __construct(
+        private readonly DispatchTriggerHandler $dispatch,
+        private readonly ?TriggerDefinitions $definitions = null,
+    ) {
     }
 
     public function register(): void
@@ -29,6 +32,29 @@ final class TriggerHooks
         add_action('transition_post_status', [$this, 'onPostStatus'], 10, 3);
         add_action('user_register', [$this, 'onUserRegistered'], 10, 1);
         add_action('wp_insert_comment', [$this, 'onComment'], 10, 2);
+        add_action('agent_studio_trigger', [$this, 'onCustom'], 10, 3);
+    }
+
+    /**
+     * A plugin-defined event: do_action( 'agent_studio_trigger', 'my-plugin/order-placed', $payload, $dedupe_key ).
+     *
+     * @param mixed $payload   Event data for the agent (an array).
+     * @param mixed $dedupeKey Optional: the same key within an hour starts an agent only once.
+     */
+    public function onCustom(mixed $kind, mixed $payload = [], mixed $dedupeKey = ''): void
+    {
+        $definition = is_string($kind) ? $this->definitions?->get($kind) : null;
+        if ($definition === null) {
+            return;
+        }
+
+        $payload = is_array($payload) ? $payload : [];
+
+        $this->dispatch(
+            TriggerType::Custom,
+            ['trigger' => $definition->key(), 'about' => $definition->about($payload)] + $payload,
+            is_string($dedupeKey) && $dedupeKey !== '' ? 'custom:' . $definition->key() . ':' . $dedupeKey : ''
+        );
     }
 
     public function onPostStatus(string $newStatus, string $oldStatus, WP_Post $post): void

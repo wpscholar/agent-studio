@@ -26,4 +26,7 @@ enum TriggerType: string
 
     /** Someone sent the agent a message through a channel, such as Telegram. */
     case Message = 'message';
+
+    /** An event a plugin defined, like "an order is placed". The config's "kind" says which. */
+    case Custom = 'custom';
 }

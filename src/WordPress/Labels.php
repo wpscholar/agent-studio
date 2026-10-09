@@ -58,6 +58,7 @@ final class Labels
             TriggerType::Webhook => __('Webhook', 'agent-studio'),
             TriggerType::Manual => __('Manual', 'agent-studio'),
             TriggerType::Message => __('Message', 'agent-studio'),
+            TriggerType::Custom => __('Plugin event', 'agent-studio'),
         };
     }
 

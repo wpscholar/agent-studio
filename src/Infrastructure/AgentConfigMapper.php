@@ -7,6 +7,7 @@ namespace AgentStudio\Infrastructure;
 use AgentStudio\Domain\Agent\Agent;
 use AgentStudio\Domain\Agent\AgentStatus;
 use AgentStudio\Domain\Agent\ApprovalMode;
+use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Domain\Agent\Schedule;
 use AgentStudio\Domain\Agent\Trigger;
 use AgentStudio\Domain\Agent\TriggerType;
@@ -52,11 +53,11 @@ final class AgentConfigMapper
         $seen = [];
         foreach (is_array($config['triggers']) ? $config['triggers'] : [] as $raw) {
             $trigger = is_array($raw) ? Trigger::fromArray($raw) : null;
-            if ($trigger === null || isset($seen[$trigger->type->value])) {
+            if ($trigger === null || isset($seen[$trigger->identity()])) {
                 continue;
             }
 
-            $seen[$trigger->type->value] = true;
+            $seen[$trigger->identity()] = true;
             $triggers[] = ['type' => $trigger->type->value, 'config' => self::cleanTriggerConfig($trigger)];
         }
 
@@ -141,6 +142,18 @@ final class AgentConfigMapper
             $schedule = Schedule::fromConfig($trigger->config);
 
             return $schedule === null ? ['every' => Schedule::DAILY, 'at' => '09:00'] : $schedule->toConfig();
+        }
+
+        if ($trigger->type === TriggerType::Custom) {
+            // The plugin's own definition reads these filters; keep them as short plain strings.
+            $clean = ['kind' => preg_match(TriggerDefinitions::KEY_PATTERN, $trigger->kind()) === 1 ? $trigger->kind() : ''];
+            foreach ($trigger->config as $key => $value) {
+                if (is_string($key) && $key !== 'kind' && preg_match('/^[a-z][a-z0-9_]{0,63}$/', $key) === 1 && is_scalar($value)) {
+                    $clean[$key] = substr(trim(sanitize_textarea_field((string) $value)), 0, 1000);
+                }
+            }
+
+            return $clean;
         }
 
         $clean = [];
