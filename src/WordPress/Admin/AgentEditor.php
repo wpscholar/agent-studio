@@ -264,7 +264,12 @@ final class AgentEditor
         $selected = $config['abilities'];
         $available = $this->abilities->available();
 
-        echo '<p class="description">' . esc_html__('The agent can only use what you tick here. Abilities come from WordPress and from other plugins.', 'agent-studio') . '</p>';
+        printf(
+            '<p class="description">%s <a href="%s">%s</a></p>',
+            esc_html__('The agent can only use what you tick here. Abilities come from WordPress, from other plugins, and from services you connect.', 'agent-studio'),
+            esc_url(Urls::connections()),
+            esc_html__('Connect a service', 'agent-studio')
+        );
 
         if ($available === []) {
             echo '<p>' . esc_html__('No abilities are registered on this site yet.', 'agent-studio') . '</p>';

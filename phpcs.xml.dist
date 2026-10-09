@@ -41,6 +41,14 @@
     <exclude-pattern>tests/*</exclude-pattern>
   </rule>
 
+  <!-- Domain and Application are plain PHP (ArchitectureTest forbids WordPress functions there),
+       so they cannot call esc_html(). Their exceptions are never printed raw: the WordPress layer
+       escapes messages when it shows them. Every other output check still applies to these layers. -->
+  <rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+    <exclude-pattern>src/Domain/*</exclude-pattern>
+    <exclude-pattern>src/Application/*</exclude-pattern>
+  </rule>
+
   <!-- WordPress test cases override snake_case hooks (set_up, tear_down) and name tests test_*. -->
   <rule ref="PSR1.Methods.CamelCapsMethodName">
     <exclude-pattern>tests/integration/*</exclude-pattern>

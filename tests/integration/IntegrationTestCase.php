@@ -11,9 +11,9 @@ use AgentStudio\Application\Execute\ExecuteRunHandler;
 use AgentStudio\Application\Execute\ToolExecutor;
 use AgentStudio\Application\Execute\ToolRegistryFactory;
 use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Contracts\AbilityGateway;
 use AgentStudio\Contracts\Notifier;
 use AgentStudio\Contracts\RecursionGuard;
-use AgentStudio\Infrastructure\AbilitiesApiGateway;
 use AgentStudio\Infrastructure\AgentConfigMapper;
 use AgentStudio\Infrastructure\SystemClock;
 use AgentStudio\Infrastructure\WordPressAgentRepository;
@@ -67,7 +67,8 @@ abstract class IntegrationTestCase extends WP_UnitTestCase
 
     protected function executor(): ExecuteRunHandler
     {
-        $gateway = new AbilitiesApiGateway();
+        // The real gateway: site abilities plus connected services' tools.
+        $gateway = Plugin::container()->get(AbilityGateway::class);
         $agents = new WordPressAgentRepository();
         $registries = new ToolRegistryFactory($gateway, new WordPressSkillRepository());
         $identity = new WordPressIdentity();
@@ -90,7 +91,7 @@ abstract class IntegrationTestCase extends WP_UnitTestCase
 
     protected function approvals(): ResolveApprovalHandler
     {
-        $gateway = new AbilitiesApiGateway();
+        $gateway = Plugin::container()->get(AbilityGateway::class);
         $guard = Plugin::container()->get(RecursionGuard::class);
         $clock = new SystemClock();
 
@@ -106,7 +107,7 @@ abstract class IntegrationTestCase extends WP_UnitTestCase
 
     protected function toolName(string $ability): string
     {
-        foreach ((new AbilitiesApiGateway())->available() as $info) {
+        foreach (Plugin::container()->get(AbilityGateway::class)->available() as $info) {
             if ($info->name === $ability) {
                 return $info->toolName();
             }
