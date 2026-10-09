@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
 
 interface AgentRepository
 {

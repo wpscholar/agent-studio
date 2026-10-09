@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
 /**
  * Stops agents from triggering themselves.

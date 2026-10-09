@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Run\PendingApproval;
-use WPAgents\Domain\Run\Run;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Run\PendingApproval;
+use AgentStudio\Domain\Run\Run;
 
 interface Notifier
 {

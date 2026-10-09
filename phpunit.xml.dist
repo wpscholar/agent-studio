@@ -4,7 +4,7 @@
   xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
   bootstrap="tests/bootstrap.php"
   colors="true"
-  cacheDirectory=".phpunit.cache"
+  cacheResultFile=".phpunit.cache/test-results"
   beStrictAboutOutputDuringTests="true"
   failOnRisky="true"
   failOnWarning="true"
@@ -17,9 +17,9 @@
       <directory suffix="Test.php">tests/integration</directory>
     </testsuite>
   </testsuites>
-  <source>
+  <coverage>
     <include>
-      <directory>src</directory>
+      <directory suffix=".php">src</directory>
     </include>
-  </source>
+  </coverage>
 </phpunit>

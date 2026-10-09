@@ -2,21 +2,22 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Contracts\Ability\AbilityResult;
-use WPAgents\Contracts\Model\ModelRequest;
-use WPAgents\Domain\Agent\AgentStatus;
-use WPAgents\Domain\Agent\ApprovalMode;
-use WPAgents\Domain\Agent\Trigger;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Conversation\Message;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\Domain\Skill\Skill;
-use WPAgents\Tests\Support\TestWorld;
+use AgentStudio\Contracts\Ability\AbilityResult;
+use AgentStudio\Contracts\Model\ModelRequest;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\AgentStatus;
+use AgentStudio\Domain\Agent\ApprovalMode;
+use AgentStudio\Domain\Agent\Trigger;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Conversation\Message;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\Domain\Skill\Skill;
+use AgentStudio\Tests\Support\TestWorld;
 
 final class ExecuteRunHandlerTest extends TestCase
 {
@@ -55,6 +56,28 @@ final class ExecuteRunHandlerTest extends TestCase
         $this->assertStringContainsString('<event>', $request->messages[0]->content);
     }
 
+    public function testPassesTheAgentsChosenModelOrNoneForAutomatic(): void
+    {
+        $this->world->agents->add(
+            new Agent(
+                id: 1,
+                name: 'Picky',
+                instructions: 'Do the job.',
+                status: AgentStatus::Active,
+                triggers: [new Trigger(TriggerType::PostStatus)],
+                runAsUserId: TestWorld::RUN_AS_USER,
+                model: 'claude-haiku-5-5',
+                provider: 'anthropic'
+            )
+        );
+        $this->world->model->replyWithText('ok');
+
+        $this->runOnce();
+
+        $request = $this->world->model->requests[0];
+        $this->assertSame(['anthropic', 'claude-haiku-5-5'], [$request->provider, $request->model]);
+    }
+
     public function testOffersOnlyAllowlistedAbilitiesAsTools(): void
     {
         $this->world->agent(abilities: ['test/read-thing']);
@@ -91,7 +114,7 @@ final class ExecuteRunHandlerTest extends TestCase
     {
         $this->world->agent(runAs: 42);
         $seenUser = null;
-        $this->world->abilities->register('test/read-thing', \WPAgents\Domain\Ability\Risk::Read, function () use (&$seenUser): AbilityResult {
+        $this->world->abilities->register('test/read-thing', \AgentStudio\Domain\Ability\Risk::Read, function () use (&$seenUser): AbilityResult {
             $seenUser = $this->world->identity->current;
 
             return AbilityResult::success('fine');
@@ -165,7 +188,7 @@ final class ExecuteRunHandlerTest extends TestCase
     {
         $this->world->agent(runAs: 42);
         $seenUser = null;
-        $this->world->abilities->register('test/write-thing', \WPAgents\Domain\Ability\Risk::Write, function () use (&$seenUser): AbilityResult {
+        $this->world->abilities->register('test/write-thing', \AgentStudio\Domain\Ability\Risk::Write, function () use (&$seenUser): AbilityResult {
             $seenUser = $this->world->identity->current;
 
             return AbilityResult::success('done');
@@ -248,7 +271,7 @@ final class ExecuteRunHandlerTest extends TestCase
     public function testAnAbilityFailureIsReportedToTheModel(): void
     {
         $this->world->agent();
-        $this->world->abilities->register('test/read-thing', \WPAgents\Domain\Ability\Risk::Read, static fn (): AbilityResult => AbilityResult::failure('Post not found.'));
+        $this->world->abilities->register('test/read-thing', \AgentStudio\Domain\Ability\Risk::Read, static fn (): AbilityResult => AbilityResult::failure('Post not found.'));
         $this->world->model->replyWithToolCall('test__read-thing')->replyWithText('It does not exist.');
 
         $run = $this->runOnce();
@@ -262,7 +285,7 @@ final class ExecuteRunHandlerTest extends TestCase
     public function testAThrowingAbilityDoesNotCrashTheRun(): void
     {
         $this->world->agent();
-        $this->world->abilities->register('test/read-thing', \WPAgents\Domain\Ability\Risk::Read, static function (): AbilityResult {
+        $this->world->abilities->register('test/read-thing', \AgentStudio\Domain\Ability\Risk::Read, static function (): AbilityResult {
             throw new \RuntimeException('boom');
         });
         $this->world->model->replyWithToolCall('test__read-thing')->replyWithText('Recovered.');
@@ -374,7 +397,7 @@ final class ExecuteRunHandlerTest extends TestCase
         $this->world->agent();
         $this->world->agent(triggers: [new Trigger(TriggerType::PostStatus)]);
         $suppressed = null;
-        $this->world->abilities->register('test/write-thing', \WPAgents\Domain\Ability\Risk::Write, function () use (&$suppressed): AbilityResult {
+        $this->world->abilities->register('test/write-thing', \AgentStudio\Domain\Ability\Risk::Write, function () use (&$suppressed): AbilityResult {
             $event = new TriggerEvent(TriggerType::PostStatus, ['new_status' => 'publish']);
             $suppressed = $this->world->dispatch->handle($event)->suppressed;
 

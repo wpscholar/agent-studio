@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Ability;
+namespace AgentStudio\Domain\Ability;
 
 /**
  * Turns an ability's input schema into one a model provider accepts.

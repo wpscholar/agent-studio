@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Cli;
+namespace AgentStudio\WordPress\Cli;
 
 use WP_CLI;
-use WPAgents\Application\Approval\ResolveApprovalHandler;
-use WPAgents\Application\Dispatch\DispatchOutcome;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Application\Execute\ExecuteRunHandler;
-use WPAgents\Application\Retention\PruneRunsHandler;
-use WPAgents\Application\Run\CancelRunHandler;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\WordPress\Labels;
+use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Dispatch\DispatchOutcome;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Application\Execute\ExecuteRunHandler;
+use AgentStudio\Application\Retention\PruneRunsHandler;
+use AgentStudio\Application\Run\CancelRunHandler;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\WordPress\Labels;
 
 /**
- * Manage WP Agents from the command line.
+ * Manage Agent Studio from the command line.
  */
 final class AgentsCommand
 {
@@ -55,7 +55,7 @@ final class AgentsCommand
      * @param array<int, string>   $args
      * @param array<string, mixed> $assocArgs
      */
-    public function list_(array $args, array $assocArgs): void
+    public function list_(array $args, array $assocArgs): void // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps -- WP-CLI subcommand; "list" is reserved.
     {
         $rows = [];
         foreach ($this->agents->all() as $agent) {
@@ -178,7 +178,7 @@ final class AgentsCommand
      * @param array<int, string>   $args
      * @param array<string, mixed> $assocArgs
      */
-    public function show_(array $args, array $assocArgs): void
+    public function show_(array $args, array $assocArgs): void // phpcs:ignore PSR1.Methods.CamelCapsMethodName.NotCamelCaps -- WP-CLI subcommand; "list" is reserved.
     {
         $this->show((int) ($args[0] ?? 0));
     }

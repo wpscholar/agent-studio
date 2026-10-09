@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\Identity;
+use AgentStudio\Contracts\Identity;
 
 final class RecordingIdentity implements Identity
 {

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 use WP_Ability;
-use WPAgents\Contracts\Ability\AbilityResult;
-use WPAgents\Contracts\AbilityGateway;
-use WPAgents\Domain\Ability\AbilityInfo;
-use WPAgents\Domain\Ability\RiskClassifier;
-use WPAgents\Domain\Ability\SchemaNormalizer;
+use AgentStudio\Contracts\Ability\AbilityResult;
+use AgentStudio\Contracts\AbilityGateway;
+use AgentStudio\Domain\Ability\AbilityInfo;
+use AgentStudio\Domain\Ability\RiskClassifier;
+use AgentStudio\Domain\Ability\SchemaNormalizer;
 
 /**
  * Exposes the abilities registered with the WordPress Abilities API to agents.
@@ -20,7 +20,7 @@ final class AbilitiesApiGateway implements AbilityGateway
      * Abilities agents may never call. Starting another agent from an agent is
      * how loops start, so that is left for a later version with proper limits.
      */
-    private const EXCLUDED = ['wp-agents/run-agent'];
+    private const EXCLUDED = ['agent-studio/run-agent'];
 
     public function available(): array
     {
@@ -83,7 +83,7 @@ final class AbilitiesApiGateway implements AbilityGateway
          * @param bool   $usable Whether agents may use the ability. Default true.
          * @param string $name   The ability name.
          */
-        return (bool) apply_filters('wpa_agent_can_use_ability', true, $name);
+        return (bool) apply_filters('agent_studio_agent_can_use_ability', true, $name);
     }
 
     private function describe(WP_Ability $ability): AbilityInfo

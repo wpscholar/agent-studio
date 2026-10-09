@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Integration;
+namespace AgentStudio\Tests\Integration;
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -29,11 +29,11 @@ final class WebhookTest extends IntegrationTestCase
     private function call(string $body, ?string $signature = null, ?int $timestamp = null, string $key = ''): WP_REST_Response
     {
         $timestamp ??= time();
-        $request = new WP_REST_Request('POST', '/wp-agents/v1/webhooks/' . $this->agentId);
+        $request = new WP_REST_Request('POST', '/agent-studio/v1/webhooks/' . $this->agentId);
         $request->set_body($body);
         $request->set_header('Content-Type', 'application/json');
-        $request->set_header('X-WPA-Timestamp', (string) $timestamp);
-        $request->set_header('X-WPA-Signature', $signature ?? 'sha256=' . hash_hmac('sha256', $timestamp . '.' . $body, self::SECRET));
+        $request->set_header('X-Agent-Studio-Timestamp', (string) $timestamp);
+        $request->set_header('X-Agent-Studio-Signature', $signature ?? 'sha256=' . hash_hmac('sha256', $timestamp . '.' . $body, self::SECRET));
         if ($key !== '') {
             $request->set_header('Idempotency-Key', $key);
         }
@@ -74,7 +74,7 @@ final class WebhookTest extends IntegrationTestCase
     public function test_an_agent_without_a_webhook_trigger_is_not_found(): void
     {
         $other = $this->createAgent(['triggers' => [['type' => 'user_registered']]], 'No hook');
-        $request = new WP_REST_Request('POST', '/wp-agents/v1/webhooks/' . $other);
+        $request = new WP_REST_Request('POST', '/agent-studio/v1/webhooks/' . $other);
         $request->set_body('{}');
 
         $this->assertTrue(in_array(rest_do_request($request)->get_status(), [401, 404], true));
@@ -82,12 +82,12 @@ final class WebhookTest extends IntegrationTestCase
 
     public function test_direct_runs_need_a_logged_in_manager(): void
     {
-        $this->assertSame(401, rest_do_request(new WP_REST_Request('POST', '/wp-agents/v1/agents/' . $this->agentId . '/run'))->get_status());
+        $this->assertSame(401, rest_do_request(new WP_REST_Request('POST', '/agent-studio/v1/agents/' . $this->agentId . '/run'))->get_status());
 
         wp_set_current_user(self::factory()->user->create(['role' => 'editor']));
-        $this->assertSame(403, rest_do_request(new WP_REST_Request('POST', '/wp-agents/v1/agents/' . $this->agentId . '/run'))->get_status());
+        $this->assertSame(403, rest_do_request(new WP_REST_Request('POST', '/agent-studio/v1/agents/' . $this->agentId . '/run'))->get_status());
 
         wp_set_current_user($this->adminId);
-        $this->assertSame(202, rest_do_request(new WP_REST_Request('POST', '/wp-agents/v1/agents/' . $this->agentId . '/run'))->get_status());
+        $this->assertSame(202, rest_do_request(new WP_REST_Request('POST', '/agent-studio/v1/agents/' . $this->agentId . '/run'))->get_status());
     }
 }

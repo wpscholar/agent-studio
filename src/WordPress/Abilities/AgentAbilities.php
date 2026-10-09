@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Abilities;
+namespace AgentStudio\WordPress\Abilities;
 
 use WP_Error;
-use WPAgents\Application\Dispatch\DispatchOutcome;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Contracts\SkillRepository;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\WordPress\Capabilities;
-use WPAgents\WordPress\Rest\AgentsController;
+use AgentStudio\Application\Dispatch\DispatchOutcome;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Contracts\SkillRepository;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\WordPress\Capabilities;
+use AgentStudio\WordPress\Rest\AgentsController;
 
 /**
  * Abilities that let other tools (an MCP client, another plugin, the REST API)
  * work with agents and skills. They are not exposed to MCP unless the site
- * owner opts in with the wpa_expose_abilities_to_mcp filter.
+ * owner opts in with the agent_studio_expose_abilities_to_mcp filter.
  */
 final class AgentAbilities
 {
-    public const CATEGORY = 'wp-agents';
+    public const CATEGORY = 'agent-studio';
 
     public function __construct(
         private readonly AgentRepository $agents,
@@ -48,8 +48,8 @@ final class AgentAbilities
         wp_register_ability_category(
             self::CATEGORY,
             [
-                'label' => __('WP Agents', 'wp-agents'),
-                'description' => __('Abilities for working with agents and skills, and starter abilities agents can use.', 'wp-agents'),
+                'label' => __('Agent Studio', 'agent-studio'),
+                'description' => __('Abilities for working with agents and skills, and starter abilities agents can use.', 'agent-studio'),
             ]
         );
     }
@@ -64,18 +64,18 @@ final class AgentAbilities
             'annotations' => ['readonly' => $readonly, 'destructive' => false, 'idempotent' => $idempotent],
             'show_in_rest' => true,
             /**
-             * Filters whether WP Agents abilities are public MCP tools.
+             * Filters whether Agent Studio abilities are public MCP tools.
              *
              * @param bool $public Default false.
              */
-            'mcp' => ['public' => (bool) apply_filters('wpa_expose_abilities_to_mcp', false)],
+            'mcp' => ['public' => (bool) apply_filters('agent_studio_expose_abilities_to_mcp', false)],
         ];
 
         wp_register_ability(
-            'wp-agents/list-agents',
+            'agent-studio/list-agents',
             [
-                'label' => __('List agents', 'wp-agents'),
-                'description' => __('Lists the agents on this site with their status and triggers.', 'wp-agents'),
+                'label' => __('List agents', 'agent-studio'),
+                'description' => __('Lists the agents on this site with their status and triggers.', 'agent-studio'),
                 'category' => self::CATEGORY,
                 'output_schema' => [
                     'type' => 'object',
@@ -101,10 +101,10 @@ final class AgentAbilities
         );
 
         wp_register_ability(
-            'wp-agents/run-agent',
+            'agent-studio/run-agent',
             [
-                'label' => __('Run an agent', 'wp-agents'),
-                'description' => __('Starts an agent right now, optionally with event data, and returns the run ID. The run happens in the background.', 'wp-agents'),
+                'label' => __('Run an agent', 'agent-studio'),
+                'description' => __('Starts an agent right now, optionally with event data, and returns the run ID. The run happens in the background.', 'agent-studio'),
                 'category' => self::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -128,10 +128,10 @@ final class AgentAbilities
         );
 
         wp_register_ability(
-            'wp-agents/get-run',
+            'agent-studio/get-run',
             [
-                'label' => __('Get an agent run', 'wp-agents'),
-                'description' => __('Returns the status, output and log of an agent run.', 'wp-agents'),
+                'label' => __('Get an agent run', 'agent-studio'),
+                'description' => __('Returns the status, output and log of an agent run.', 'agent-studio'),
                 'category' => self::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -145,10 +145,10 @@ final class AgentAbilities
         );
 
         wp_register_ability(
-            'wp-agents/list-skills',
+            'agent-studio/list-skills',
             [
-                'label' => __('List skills', 'wp-agents'),
-                'description' => __('Lists the skills on this site: reusable instructions with a short description.', 'wp-agents'),
+                'label' => __('List skills', 'agent-studio'),
+                'description' => __('Lists the skills on this site: reusable instructions with a short description.', 'agent-studio'),
                 'category' => self::CATEGORY,
                 'output_schema' => [
                     'type' => 'object',
@@ -173,10 +173,10 @@ final class AgentAbilities
         );
 
         wp_register_ability(
-            'wp-agents/load-skill',
+            'agent-studio/load-skill',
             [
-                'label' => __('Load a skill', 'wp-agents'),
-                'description' => __('Returns the full instructions of a skill by its slug.', 'wp-agents'),
+                'label' => __('Load a skill', 'agent-studio'),
+                'description' => __('Returns the full instructions of a skill by its slug.', 'agent-studio'),
                 'category' => self::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -226,7 +226,7 @@ final class AgentAbilities
     {
         $agentId = (int) ($input['agent_id'] ?? 0);
         if ($this->agents->find($agentId) === null) {
-            return new WP_Error('wpa_agent_not_found', __('Agent not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_agent_not_found', __('Agent not found.', 'agent-studio'));
         }
 
         $payload = is_array($input['payload'] ?? null) ? $input['payload'] : [];
@@ -234,7 +234,7 @@ final class AgentAbilities
         $dispatch = $result->forAgent($agentId);
 
         if ($dispatch === null || $dispatch->outcome !== DispatchOutcome::Queued) {
-            return new WP_Error('wpa_run_not_started', __('The agent could not be started.', 'wp-agents'));
+            return new WP_Error('agent_studio_run_not_started', __('The agent could not be started.', 'agent-studio'));
         }
 
         return ['run_id' => (int) $dispatch->runId, 'status' => 'queued'];
@@ -249,7 +249,7 @@ final class AgentAbilities
     {
         $run = $this->runs->find((int) ($input['run_id'] ?? 0));
 
-        return $run === null ? new WP_Error('wpa_run_not_found', __('Run not found.', 'wp-agents')) : AgentsController::summarize($run);
+        return $run === null ? new WP_Error('agent_studio_run_not_found', __('Run not found.', 'agent-studio')) : AgentsController::summarize($run);
     }
 
     /**
@@ -274,7 +274,7 @@ final class AgentAbilities
     {
         $skill = $this->skills->findBySlug(is_string($input['slug'] ?? null) ? $input['slug'] : '');
         if ($skill === null) {
-            return new WP_Error('wpa_skill_not_found', __('Skill not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_skill_not_found', __('Skill not found.', 'agent-studio'));
         }
 
         return [

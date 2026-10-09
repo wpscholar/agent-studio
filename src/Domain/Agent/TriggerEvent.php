@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Agent;
+namespace AgentStudio\Domain\Agent;
 
 /**
  * Something that happened which may start one or more agents.

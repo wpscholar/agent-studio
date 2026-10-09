@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\RunStatus;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\RunStatus;
 
 /**
  * Stores runs as arrays, like a database would, so tests also prove that runs

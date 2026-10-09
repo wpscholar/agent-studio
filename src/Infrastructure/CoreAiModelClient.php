@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 use stdClass;
 use WordPress\AiClient\Messages\DTO\Message;
@@ -12,18 +12,18 @@ use WordPress\AiClient\Results\DTO\GenerativeAiResult;
 use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
 use WordPress\AiClient\Tools\DTO\FunctionResponse;
-use WPAgents\Contracts\Model\ModelException;
-use WPAgents\Contracts\Model\ModelRequest;
-use WPAgents\Contracts\Model\ModelResponse;
-use WPAgents\Contracts\Model\ToolSpec;
-use WPAgents\Contracts\ModelClient;
-use WPAgents\Domain\Conversation\Message as ConversationMessage;
-use WPAgents\Domain\Conversation\ToolCall;
+use AgentStudio\Contracts\Model\ModelException;
+use AgentStudio\Contracts\Model\ModelRequest;
+use AgentStudio\Contracts\Model\ModelResponse;
+use AgentStudio\Contracts\Model\ToolSpec;
+use AgentStudio\Contracts\ModelClient;
+use AgentStudio\Domain\Conversation\Message as ConversationMessage;
+use AgentStudio\Domain\Conversation\ToolCall;
 
 /**
  * Talks to a model through the WordPress 7.0 AI Client, so agents use whichever
  * provider and credentials the site owner set up under Settings > Connectors.
- * WP Agents never stores an API key.
+ * Agent Studio never stores an API key.
  */
 final class CoreAiModelClient implements ModelClient
 {
@@ -37,7 +37,7 @@ final class CoreAiModelClient implements ModelClient
     public function generate(ModelRequest $request): ModelResponse
     {
         if (! function_exists('wp_ai_client_prompt')) {
-            throw new ModelException('The WordPress AI Client is not available. WP Agents needs WordPress 7.0 or later.');
+            throw new ModelException('The WordPress AI Client is not available. Agent Studio needs WordPress 7.0 or later.');
         }
 
         if (function_exists('wp_supports_ai') && ! wp_supports_ai()) {
@@ -46,24 +46,29 @@ final class CoreAiModelClient implements ModelClient
 
         $builder = wp_ai_client_prompt();
 
-        /**
-         * Filters which AI provider agents use, for example "anthropic" or "openai".
-         *
-         * An empty string lets the AI Client choose the site's default.
-         *
-         * @param string $provider Provider ID. Default empty.
-         */
-        $provider = apply_filters('wpa_ai_provider', '');
-        if (is_string($provider) && $provider !== '') {
-            $builder->using_provider($provider);
+        if ($request->provider !== '' && $request->model !== '') {
+            // The agent was set to one exact model.
+            $builder->using_model_preference([$request->provider, $request->model]);
+        } else {
+            /**
+             * Filters which AI provider agents set to "Automatic" use, for example "anthropic" or "openai".
+             *
+             * An empty string lets the AI Client choose any connected provider with a suitable model.
+             *
+             * @param string $provider Provider ID. Default empty.
+             */
+            $provider = apply_filters('agent_studio_ai_provider', '');
+            if (is_string($provider) && $provider !== '') {
+                $builder->using_provider($provider);
+            }
+
+            if ($request->model !== '') {
+                $builder->using_model_preference($request->model);
+            }
         }
 
         $builder->using_system_instruction($request->systemPrompt);
         $builder->using_max_tokens($request->maxTokens);
-
-        if ($request->model !== '') {
-            $builder->using_model_preference($request->model);
-        }
 
         $declarations = array_map(fn (ToolSpec $tool): FunctionDeclaration => $this->declare($tool), $request->tools);
         if ($declarations !== []) {
@@ -82,7 +87,7 @@ final class CoreAiModelClient implements ModelClient
         $result = $builder->generate_text_result();
 
         if (is_wp_error($result)) {
-            throw new ModelException($result->get_error_message());
+            throw new ModelException($result->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; stored on the run and escaped on display.
         }
 
         if (! $result instanceof GenerativeAiResult) {

@@ -1,135 +1,102 @@
 #!/usr/bin/env bash
-# Installs the WordPress core test scaffolding used by the integration suite.
+# Installs what the integration suite needs: a copy of WordPress core, the
+# WordPress PHPUnit test library for the same version, and an empty test
+# database. Safe to re-run; it skips work that is already done.
 #
-# Usage: bin/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]
+# Usage: bin/install-wp-tests.sh [db-name] [db-user] [db-pass] [db-host] [wp-version]
 #
-# Example: bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
+# Defaults suit the devcontainer: wordpress_test root root db, and the version
+# of the dev site at /var/www/html (or the latest release when there is none).
+# wp-version may be "latest", X.Y or X.Y.Z.
+#
+# Needs PHP with mysqli, git and curl. Uses WP-CLI for core when it is present.
 
-if [ $# -lt 3 ]; then
-	echo "usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]"
+set -euo pipefail
+
+DB_NAME=${1-wordpress_test}
+DB_USER=${2-root}
+DB_PASS=${3-root}
+DB_HOST=${4-db}
+WP_VERSION=${5-}
+
+TMPDIR=${TMPDIR-/tmp}
+TMPDIR=${TMPDIR%/}
+WP_TESTS_DIR=${WP_TESTS_DIR-$TMPDIR/wordpress-tests-lib}
+WP_CORE_DIR=${WP_CORE_DIR-$TMPDIR/wordpress}
+WP_CORE_DIR=${WP_CORE_DIR%/}
+DEVELOP_REPO=https://github.com/WordPress/wordpress-develop.git
+
+if [ -z "$WP_VERSION" ]; then
+	# tail: WP-CLI can print PHP deprecation notices to stdout before the version.
+	WP_VERSION=$(wp core version --path=/var/www/html 2>/dev/null | tail -n 1)
+	WP_VERSION=${WP_VERSION:-latest}
+fi
+if [ "$WP_VERSION" = latest ]; then
+	WP_VERSION=$(curl -fsSL https://api.wordpress.org/core/version-check/1.7/ | grep -o '"version":"[^"]*' | head -1 | cut -d'"' -f4)
+fi
+
+# wordpress-develop tags X.Y.0 releases as "X.Y.0"; WordPress itself reports "X.Y".
+WP_TESTS_TAG=
+for tag in "$WP_VERSION" "$WP_VERSION.0"; do
+	if git ls-remote --exit-code --tags "$DEVELOP_REPO" "refs/tags/$tag" > /dev/null; then
+		WP_TESTS_TAG=$tag
+		break
+	fi
+done
+if [ -z "$WP_TESTS_TAG" ]; then
+	echo "No wordpress-develop tag for WordPress $WP_VERSION." >&2
 	exit 1
 fi
 
-DB_NAME=$1
-DB_USER=$2
-DB_PASS=$3
-DB_HOST=${4-localhost}
-WP_VERSION=${5-latest}
-SKIP_DB_CREATE=${6-false}
+echo "WordPress $WP_VERSION: core in $WP_CORE_DIR, test library in $WP_TESTS_DIR"
 
-TMPDIR=${TMPDIR-/tmp}
-TMPDIR=$(echo "$TMPDIR" | sed -e "s/\/$//")
-WP_TESTS_DIR=${WP_TESTS_DIR-$TMPDIR/wordpress-tests-lib}
-WP_CORE_DIR=${WP_CORE_DIR-$TMPDIR/wordpress/}
-
-download() {
-	if [ "$(which curl)" ]; then
-		curl -s "$1" >"$2"
-	elif [ "$(which wget)" ]; then
-		wget -nv -O "$2" "$1"
-	fi
-}
-
-# Resolve "latest" and "X.Y" to a concrete version and the matching tests tag.
-if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+\-(beta|RC)[0-9]+$ ]]; then
-	WP_TESTS_TAG="branches/${WP_VERSION//\-*/}"
-elif [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
-	WP_TESTS_TAG="branches/$WP_VERSION"
-elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
-	if [[ $WP_VERSION =~ [0-9]+\.[0-9]+\.[0] ]]; then
-		WP_TESTS_TAG="tags/${WP_VERSION%??}"
-	else
-		WP_TESTS_TAG="tags/$WP_VERSION"
-	fi
-elif [[ $WP_VERSION == 'nightly' || $WP_VERSION == 'trunk' ]]; then
-	WP_TESTS_TAG="trunk"
-else
-	download http://api.wordpress.org/core/version-check/1.7/ /tmp/wp-latest.json
-	LATEST_VERSION=$(grep -o '"version":"[^"]*' /tmp/wp-latest.json | sed 's/"version":"//' | head -1)
-	if [[ -z "$LATEST_VERSION" ]]; then
-		echo "Latest WordPress version could not be found"
-		exit 1
-	fi
-	WP_TESTS_TAG="tags/$LATEST_VERSION"
-fi
-
-set -ex
-
-install_wp() {
-	if [ -d "$WP_CORE_DIR" ]; then
+install_core() {
+	if [ "$(cat "$WP_CORE_DIR/.version" 2>/dev/null)" = "$WP_VERSION" ]; then
 		return
 	fi
-
+	rm -rf "$WP_CORE_DIR"
 	mkdir -p "$WP_CORE_DIR"
-
-	if [[ $WP_VERSION == 'nightly' || $WP_VERSION == 'trunk' ]]; then
-		mkdir -p "$TMPDIR/wordpress-trunk"
-		rm -rf "$TMPDIR"/wordpress-trunk/*
-		svn export --quiet https://core.svn.wordpress.org/trunk "$TMPDIR/wordpress-trunk/wordpress"
-		mv "$TMPDIR/wordpress-trunk/wordpress"/* "$WP_CORE_DIR"
+	if command -v wp > /dev/null; then
+		wp core download --version="$WP_VERSION" --path="$WP_CORE_DIR" --skip-content --quiet
 	else
-		if [ "$WP_VERSION" == 'latest' ]; then
-			local ARCHIVE_NAME='latest'
-		elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+ ]]; then
-			local ARCHIVE_NAME="wordpress-$WP_VERSION"
-		else
-			local ARCHIVE_NAME="wordpress-$WP_VERSION"
-		fi
-		download "https://wordpress.org/${ARCHIVE_NAME}.tar.gz" "$TMPDIR/wordpress.tar.gz"
-		tar --strip-components=1 -zxmf "$TMPDIR/wordpress.tar.gz" -C "$WP_CORE_DIR"
+		curl -fsSL "https://wordpress.org/wordpress-$WP_VERSION.tar.gz" | tar -xz --strip-components=1 -C "$WP_CORE_DIR"
 	fi
-
-	download https://raw.githubusercontent.com/markoheijnen/wp-mysqli/master/db.php "$WP_CORE_DIR/wp-content/db.php"
+	echo "$WP_VERSION" > "$WP_CORE_DIR/.version"
 }
 
-install_test_suite() {
-	local ioption='-i'
-	if [[ $(uname -s) == 'Darwin' ]]; then
-		ioption='-i.bak'
+install_test_library() {
+	if [ "$(cat "$WP_TESTS_DIR/.version" 2>/dev/null)" = "$WP_VERSION" ]; then
+		return
 	fi
-
-	if [ ! -d "$WP_TESTS_DIR" ]; then
-		mkdir -p "$WP_TESTS_DIR"
-		rm -rf "$WP_TESTS_DIR"/{includes,data}
-		svn export --quiet --ignore-externals "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/includes/" "$WP_TESTS_DIR/includes"
-		svn export --quiet --ignore-externals "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/data/" "$WP_TESTS_DIR/data"
-	fi
-
-	if [ ! -f wp-tests-config.php ]; then
-		download "https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php" "$WP_TESTS_DIR/wp-tests-config.php"
-		WP_CORE_DIR=$(echo "$WP_CORE_DIR" | sed "s:/\$::")
-		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" "$WP_TESTS_DIR/wp-tests-config.php"
-		sed $ioption "s:__DIR__ . '/src/':'$WP_CORE_DIR/':" "$WP_TESTS_DIR/wp-tests-config.php"
-		sed $ioption "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR/wp-tests-config.php"
-		sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR/wp-tests-config.php"
-		sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR/wp-tests-config.php"
-		sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR/wp-tests-config.php"
-	fi
+	local checkout
+	checkout=$(mktemp -d)
+	# Fetch only tests/phpunit/{includes,data} and the root files of the tag.
+	git -c advice.detachedHead=false clone --quiet --depth 1 --filter=blob:none --sparse --branch "$WP_TESTS_TAG" "$DEVELOP_REPO" "$checkout"
+	git -C "$checkout" sparse-checkout set tests/phpunit/includes tests/phpunit/data
+	rm -rf "$WP_TESTS_DIR"
+	mkdir -p "$WP_TESTS_DIR"
+	mv "$checkout/tests/phpunit/includes" "$checkout/tests/phpunit/data" "$WP_TESTS_DIR/"
+	sed \
+		-e "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" \
+		-e "s:__DIR__ . '/src/':'$WP_CORE_DIR/':" \
+		-e "s/youremptytestdbnamehere/$DB_NAME/" \
+		-e "s/yourusernamehere/$DB_USER/" \
+		-e "s/yourpasswordhere/$DB_PASS/" \
+		-e "s|localhost|$DB_HOST|" \
+		"$checkout/wp-tests-config-sample.php" > "$WP_TESTS_DIR/wp-tests-config.php"
+	rm -rf "$checkout"
+	echo "$WP_VERSION" > "$WP_TESTS_DIR/.version"
 }
 
-install_db() {
-	if [ "${SKIP_DB_CREATE}" = "true" ]; then
-		return 0
-	fi
-
-	local PARTS=(${DB_HOST//\:/ })
-	local DB_HOSTNAME=${PARTS[0]}
-	local DB_SOCK_OR_PORT=${PARTS[1]}
-	local EXTRA=""
-
-	if ! [ -z "$DB_HOSTNAME" ]; then
-		if [ "$(echo "$DB_SOCK_OR_PORT" | grep -e '^[0-9]\{1,\}$')" ]; then
-			EXTRA=" --host=$DB_HOSTNAME --port=$DB_SOCK_OR_PORT --protocol=tcp"
-		elif ! [ -z "$DB_SOCK_OR_PORT" ]; then
-			EXTRA=" --socket=$DB_SOCK_OR_PORT"
-		elif ! [ -z "$DB_HOSTNAME" ]; then
-			EXTRA=" --host=$DB_HOSTNAME --protocol=tcp"
-		fi
-	fi
-
-	mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS"$EXTRA || true
+create_database() {
+	DB_NAME=$DB_NAME DB_USER=$DB_USER DB_PASS=$DB_PASS DB_HOST=$DB_HOST php -r '
+		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+		[$host, $port] = array_pad(explode(":", getenv("DB_HOST"), 2), 2, null);
+		$db = new mysqli($host, getenv("DB_USER"), getenv("DB_PASS"), "", $port !== null ? (int) $port : 3306);
+		$db->query("CREATE DATABASE IF NOT EXISTS `" . $db->real_escape_string(getenv("DB_NAME")) . "`");
+	'
 }
 
-install_wp
-install_test_suite
-install_db
+install_core
+install_test_library
+create_database

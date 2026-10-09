@@ -14,7 +14,7 @@ If you're working on Domain/Application code, **do not** introduce `WP_Post`, `W
 
 ## Quick commands
 
-- Start environment: open in Codespaces or "Reopen in Container"; `make start`.
+- Start environment: `make setup` (or "Reopen in Container" / Codespaces). See `docs/environment.md`.
 - Install: `composer install && npm install`
 - Build: `npm run build`
 - Tests: `composer test && npm test`
@@ -37,7 +37,7 @@ See `docs/environment.md`, `docs/testing.md`, `docs/deployment.md`, `docs/archit
 - Use WP-CLI inside the devcontainer.
 - See WordPress agent-skills: https://github.com/WordPress/agent-skills
 
-## WP Agents specifics
+## Agent Studio specifics
 
 - Agent and skill post types use `map_meta_cap => false` on purpose. Never turn it on: it makes `manage_options` behave like a per-post capability.
 - `tests/unit/` must not load WordPress. `tests/integration/` extends `WP_UnitTestCase` and fakes only the model (`ScriptedModelClient`).

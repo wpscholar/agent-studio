@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 /**
  * The run log table.
@@ -10,13 +10,13 @@ namespace WPAgents\Infrastructure;
 final class Schema
 {
     public const VERSION = '1';
-    public const OPTION = 'wpa_db_version';
+    public const OPTION = 'agent_studio_db_version';
 
     public static function table(): string
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wpa_runs';
+        return $wpdb->prefix . 'agent_studio_runs';
     }
 
     public static function install(): void

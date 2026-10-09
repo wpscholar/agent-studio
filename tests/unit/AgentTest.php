@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\AgentStatus;
-use WPAgents\Domain\Agent\Trigger;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\AgentStatus;
+use AgentStudio\Domain\Agent\Trigger;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
 
 final class AgentTest extends TestCase
 {

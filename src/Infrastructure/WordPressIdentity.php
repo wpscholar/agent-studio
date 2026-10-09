@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
-use WPAgents\Contracts\Identity;
+use AgentStudio\Contracts\Identity;
 
 final class WordPressIdentity implements Identity
 {

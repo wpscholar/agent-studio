@@ -1,28 +1,54 @@
+name: agent-studio
+
+# Override any of these per run, e.g. `make setup PHP_VERSION=8.2 WP_VERSION=7.0`:
+#   PHP_VERSION   8.4    PHP for both the app (CLI, tests) and the web server
+#   WP_VERSION    7.1    any `wordpress` image minor tag
+#   WP_PORT       8484   host port for WordPress
+#   MAILPIT_PORT  8025   host port for Mailpit
+#   WP_URL        http://localhost:$WP_PORT
+
+# wp-config.php in the WordPress image reads these, so WP-CLI in the app
+# container connects to the same database as the web server.
+x-wordpress-env: &wordpress-env
+  WORDPRESS_DB_HOST: db
+  WORDPRESS_DB_USER: wordpress
+  WORDPRESS_DB_PASSWORD: wordpress
+  WORDPRESS_DB_NAME: wordpress
+  WORDPRESS_DEBUG: 1
+
 services:
   app:
-    image: mcr.microsoft.com/devcontainers/php:8.3
+    build:
+      context: .
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+    image: agent-studio-app:php${PHP_VERSION:-8.4}
     volumes:
       - ../:/workspace:cached
+      - node-modules:/workspace/node_modules
+      - wp-data:/var/www/html
+      - ../:/var/www/html/wp-content/plugins/agent-studio:cached
     command: sleep infinity
-    depends_on: [db, mailpit]
+    depends_on:
+      db: { condition: service_healthy }
+      wordpress: { condition: service_started }
+      mailpit: { condition: service_started }
     environment:
-      DB_HOST: db
-      WP_HOST: wordpress
+      <<: *wordpress-env
+      WP_URL: ${WP_URL:-http://localhost:${WP_PORT:-8484}}
+      MAILPIT_PORT: ${MAILPIT_PORT:-8025}
+      XDEBUG_MODE: ${XDEBUG_MODE:-off}
   wordpress:
-    image: wordpress:6.8
+    image: wordpress:${WP_VERSION:-7.1}-php${PHP_VERSION:-8.4}
     restart: unless-stopped
     ports:
-      - "80:80"
-    environment:
-      WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
-      WORDPRESS_DEBUG: 1
+      - '${WP_PORT:-8484}:80'
+    environment: *wordpress-env
     volumes:
-      - ../:/var/www/html/wp-content/plugins/wp-agents:cached
       - wp-data:/var/www/html
-    depends_on: [db]
+      - ../:/var/www/html/wp-content/plugins/agent-studio:cached
+    depends_on:
+      db: { condition: service_healthy }
   db:
     image: mysql:8.0
     restart: unless-stopped
@@ -33,10 +59,16 @@ services:
       MYSQL_PASSWORD: wordpress
     volumes:
       - db-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-proot']
+      interval: 3s
+      timeout: 2s
+      retries: 40
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "8025:8025"
+      - '${MAILPIT_PORT:-8025}:8025'
 volumes:
   db-data:
   wp-data:
+  node-modules:

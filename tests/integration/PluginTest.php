@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Integration;
+namespace AgentStudio\Tests\Integration;
 
-use WPAgents\Infrastructure\Schema;
-use WPAgents\WordPress\Capabilities;
+use AgentStudio\Infrastructure\Schema;
+use AgentStudio\WordPress\Capabilities;
 
 final class PluginTest extends IntegrationTestCase
 {
@@ -18,8 +18,8 @@ final class PluginTest extends IntegrationTestCase
 
     public function test_it_registers_agent_and_skill_post_types(): void
     {
-        $this->assertTrue(post_type_exists('wpa_agent'));
-        $this->assertTrue(post_type_exists('wpa_skill'));
+        $this->assertTrue(post_type_exists('agent_studio_agent'));
+        $this->assertTrue(post_type_exists('agent_studio_skill'));
     }
 
     public function test_administrators_can_manage_agents(): void
@@ -48,6 +48,6 @@ final class PluginTest extends IntegrationTestCase
 
     public function test_the_prune_job_is_scheduled(): void
     {
-        $this->assertTrue((bool) wp_next_scheduled('wpa_prune_runs'));
+        $this->assertTrue((bool) wp_next_scheduled('agent_studio_prune_runs'));
     }
 }

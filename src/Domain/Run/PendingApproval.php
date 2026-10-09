@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Run;
+namespace AgentStudio\Domain\Run;
 
-use WPAgents\Domain\Ability\Risk;
+use AgentStudio\Domain\Ability\Risk;
 
 /**
  * A tool call that is waiting for a person to approve or reject it.

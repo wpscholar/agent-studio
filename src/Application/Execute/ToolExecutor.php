@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Execute;
+namespace AgentStudio\Application\Execute;
 
 use Throwable;
-use WPAgents\Contracts\AbilityGateway;
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\Identity;
-use WPAgents\Contracts\RecursionGuard;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Conversation\Message;
-use WPAgents\Domain\Conversation\ToolCall;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\StepKind;
+use AgentStudio\Contracts\AbilityGateway;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\Identity;
+use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Conversation\Message;
+use AgentStudio\Domain\Conversation\ToolCall;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\StepKind;
 
 /**
  * Carries out one tool call and records the result in the run.

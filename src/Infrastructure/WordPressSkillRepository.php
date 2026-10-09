@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 use InvalidArgumentException;
 use RuntimeException;
 use WP_Post;
-use WPAgents\Contracts\SkillRepository;
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Contracts\SkillRepository;
+use AgentStudio\Domain\Skill\Skill;
 
 /**
- * Skills are posts of type wpa_skill: the slug is the post name, the title is
+ * Skills are posts of type agent_studio_skill: the slug is the post name, the title is
  * the skill name, the excerpt is the description and the content is the body.
  */
 final class WordPressSkillRepository implements SkillRepository
@@ -65,7 +65,7 @@ final class WordPressSkillRepository implements SkillRepository
 
         $result = wp_insert_post($data, true);
         if (is_wp_error($result)) {
-            throw new RuntimeException($result->get_error_message());
+            throw new RuntimeException($result->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; escaped by the caller on display.
         }
     }
 

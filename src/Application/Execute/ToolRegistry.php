@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Execute;
+namespace AgentStudio\Application\Execute;
 
-use WPAgents\Contracts\Model\ToolSpec;
-use WPAgents\Domain\Ability\AbilityInfo;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Contracts\Model\ToolSpec;
+use AgentStudio\Domain\Ability\AbilityInfo;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Skill\Skill;
 
 /**
  * The tools one agent can use: its allowlisted abilities that exist right now,

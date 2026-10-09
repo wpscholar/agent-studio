@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Conversation;
+namespace AgentStudio\Domain\Conversation;
 
 /**
  * One turn in an agent's conversation with the model.

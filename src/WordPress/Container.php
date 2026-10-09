@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
 use RuntimeException;
 
@@ -40,7 +40,7 @@ final class Container
     {
         if (! isset($this->instances[$id])) {
             if (! isset($this->factories[$id])) {
-                throw new RuntimeException(sprintf('Nothing is registered for %s.', $id));
+                throw new RuntimeException(sprintf('Nothing is registered for %s.', $id)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; a developer error.
             }
 
             $this->instances[$id] = ($this->factories[$id])($this);
@@ -48,7 +48,7 @@ final class Container
 
         $instance = $this->instances[$id];
         if (! $instance instanceof $id) {
-            throw new RuntimeException(sprintf('The service for %s has the wrong type.', $id));
+            throw new RuntimeException(sprintf('The service for %s has the wrong type.', $id)); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; a developer error.
         }
 
         return $instance;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\Notifier;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Run\PendingApproval;
-use WPAgents\Domain\Run\Run;
+use AgentStudio\Contracts\Notifier;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Run\PendingApproval;
+use AgentStudio\Domain\Run\Run;
 
 final class SpyNotifier implements Notifier
 {

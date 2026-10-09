@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Infrastructure\PostTypes;
 
 final class Urls
 {
@@ -20,7 +20,7 @@ final class Urls
 
     public static function runs(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=wpa-runs');
+        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-runs');
     }
 
     public static function run(int $runId): string
@@ -30,21 +30,21 @@ final class Urls
 
     public static function abilities(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=wpa-abilities');
+        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-abilities');
     }
 
     public static function templates(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=wpa-templates');
+        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-templates');
     }
 
     public static function importSkill(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=wpa-import-skill');
+        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-import-skill');
     }
 
     public static function webhook(int $agentId): string
     {
-        return rest_url('wp-agents/v1/webhooks/' . $agentId);
+        return rest_url('agent-studio/v1/webhooks/' . $agentId);
     }
 }

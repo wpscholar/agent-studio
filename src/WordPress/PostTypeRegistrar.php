@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Infrastructure\PostTypes;
 
 /**
  * Registers the agent and skill content types.
@@ -27,20 +27,20 @@ final class PostTypeRegistrar
             PostTypes::AGENT,
             [
                 'labels' => [
-                    'name' => __('Agents', 'wp-agents'),
-                    'singular_name' => __('Agent', 'wp-agents'),
-                    'menu_name' => __('Agents', 'wp-agents'),
-                    'add_new' => __('Add New', 'wp-agents'),
-                    'add_new_item' => __('Add New Agent', 'wp-agents'),
-                    'edit_item' => __('Edit Agent', 'wp-agents'),
-                    'new_item' => __('New Agent', 'wp-agents'),
-                    'view_item' => __('View Agent', 'wp-agents'),
-                    'search_items' => __('Search Agents', 'wp-agents'),
-                    'not_found' => __('No agents yet.', 'wp-agents'),
-                    'not_found_in_trash' => __('No agents in the Trash.', 'wp-agents'),
-                    'all_items' => __('All Agents', 'wp-agents'),
+                    'name' => __('Agents', 'agent-studio'),
+                    'singular_name' => __('Agent', 'agent-studio'),
+                    'menu_name' => __('Agents', 'agent-studio'),
+                    'add_new' => __('Add New', 'agent-studio'),
+                    'add_new_item' => __('Add New Agent', 'agent-studio'),
+                    'edit_item' => __('Edit Agent', 'agent-studio'),
+                    'new_item' => __('New Agent', 'agent-studio'),
+                    'view_item' => __('View Agent', 'agent-studio'),
+                    'search_items' => __('Search Agents', 'agent-studio'),
+                    'not_found' => __('No agents yet.', 'agent-studio'),
+                    'not_found_in_trash' => __('No agents in the Trash.', 'agent-studio'),
+                    'all_items' => __('All Agents', 'agent-studio'),
                 ],
-                'description' => __('Automations that use AI and your site abilities.', 'wp-agents'),
+                'description' => __('Automations that use AI and your site abilities.', 'agent-studio'),
                 'public' => false,
                 'show_ui' => true,
                 'show_in_menu' => true,
@@ -63,25 +63,25 @@ final class PostTypeRegistrar
             PostTypes::SKILL,
             [
                 'labels' => [
-                    'name' => __('Skills', 'wp-agents'),
-                    'singular_name' => __('Skill', 'wp-agents'),
-                    'menu_name' => __('Skills', 'wp-agents'),
-                    'add_new' => __('Add New', 'wp-agents'),
-                    'add_new_item' => __('Add New Skill', 'wp-agents'),
-                    'edit_item' => __('Edit Skill', 'wp-agents'),
-                    'new_item' => __('New Skill', 'wp-agents'),
-                    'view_item' => __('View Skill', 'wp-agents'),
-                    'search_items' => __('Search Skills', 'wp-agents'),
-                    'not_found' => __('No skills yet.', 'wp-agents'),
-                    'not_found_in_trash' => __('No skills in the Trash.', 'wp-agents'),
-                    'all_items' => __('Skills', 'wp-agents'),
+                    'name' => __('Skills', 'agent-studio'),
+                    'singular_name' => __('Skill', 'agent-studio'),
+                    'menu_name' => __('Skills', 'agent-studio'),
+                    'add_new' => __('Add New', 'agent-studio'),
+                    'add_new_item' => __('Add New Skill', 'agent-studio'),
+                    'edit_item' => __('Edit Skill', 'agent-studio'),
+                    'new_item' => __('New Skill', 'agent-studio'),
+                    'view_item' => __('View Skill', 'agent-studio'),
+                    'search_items' => __('Search Skills', 'agent-studio'),
+                    'not_found' => __('No skills yet.', 'agent-studio'),
+                    'not_found_in_trash' => __('No skills in the Trash.', 'agent-studio'),
+                    'all_items' => __('Skills', 'agent-studio'),
                 ],
-                'description' => __('Reusable instructions that agents can load when they need them.', 'wp-agents'),
+                'description' => __('Reusable instructions that agents can load when they need them.', 'agent-studio'),
                 'public' => false,
                 'show_ui' => true,
                 'show_in_menu' => 'edit.php?post_type=' . PostTypes::AGENT,
                 'show_in_rest' => false,
-                'supports' => ['title', 'editor', 'excerpt'],
+                'supports' => ['title', 'editor', 'excerpt', 'revisions'],
                 'has_archive' => false,
                 'rewrite' => false,
                 'query_var' => false,

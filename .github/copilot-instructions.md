@@ -7,6 +7,7 @@ The canonical agent instruction file is [`AGENTS.md`](../AGENTS.md). Read it fir
 ## Critical guardrails (summary; see AGENTS.md for full)
 
 **Never:**
+
 - Read or modify production secrets.
 - Deploy to production (`wp deploy`, SVN publish, etc.).
 - `cat .env`, `echo $SECRET`, or any command that prints secret values.
@@ -14,12 +15,14 @@ The canonical agent instruction file is [`AGENTS.md`](../AGENTS.md). Read it fir
 - Bypass CI requirements or disable security checks.
 
 **Requires approval first:**
+
 - Changes to `.github/workflows/`, packaging script, or auth/security code.
 - Destructive DB operations on shared data.
 - Dependency major upgrades.
 - Modifying `.cursor/environment.json` or this file (they're part of the agent contract).
 
 **Allowed without approval:**
+
 - Install deps, run tests/lint/format/static analysis, modify code and docs, run WP-CLI against the dev site, build assets.
 
 ## Common commands

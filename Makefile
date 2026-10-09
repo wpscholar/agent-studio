@@ -9,16 +9,18 @@
 
 DC := docker compose -f .devcontainer/docker-compose.yml
 
+# Override per run, e.g. `make setup PHP_VERSION=8.2 WP_VERSION=7.0 WP_PORT=9000`.
+# See .devcontainer/docker-compose.yml for the full list and defaults.
+export PHP_VERSION WP_VERSION WP_PORT MAILPIT_PORT WP_URL XDEBUG_MODE
+
 .PHONY: help setup start stop restart reset shell logs
 
 help:  ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  %-12s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-setup:  ## First-time setup (build images, start stack, install deps, copy env)
-	$(DC) build
-	$(DC) up -d
-	$(DC) exec -T app composer install --prefer-dist --no-interaction || true
-	$(DC) exec -T app npm ci || true
+setup:  ## Build, start, install deps, install WordPress with WP-CLI, prepare tests
+	$(DC) up -d --build
+	$(DC) exec -T -w /workspace app bash .devcontainer/post-create.sh
 	@[ -f .env ] || ( [ -f .env.example ] && cp .env.example .env && echo "Copied .env.example -> .env" )
 
 start:  ## Start dev containers
@@ -34,7 +36,7 @@ reset:  ## Destroy volumes and rebuild (DEV ONLY — destroys local DB)
 	$(MAKE) setup
 
 shell:  ## Drop into the app container
-	$(DC) exec app bash
+	$(DC) exec -w /workspace app bash
 
 logs:  ## Tail container logs
 	$(DC) logs -f

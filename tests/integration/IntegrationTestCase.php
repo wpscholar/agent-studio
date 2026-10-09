@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Integration;
+namespace AgentStudio\Tests\Integration;
 
 use RuntimeException;
 use WP_UnitTestCase;
-use WPAgents\Application\Approval\ResolveApprovalHandler;
-use WPAgents\Application\Execute\ExecuteRunHandler;
-use WPAgents\Application\Execute\ToolExecutor;
-use WPAgents\Application\Execute\ToolRegistryFactory;
-use WPAgents\Application\Prompt\PromptBuilder;
-use WPAgents\Contracts\Notifier;
-use WPAgents\Contracts\RecursionGuard;
-use WPAgents\Infrastructure\AbilitiesApiGateway;
-use WPAgents\Infrastructure\AgentConfigMapper;
-use WPAgents\Infrastructure\SystemClock;
-use WPAgents\Infrastructure\WordPressAgentRepository;
-use WPAgents\Infrastructure\WordPressIdentity;
-use WPAgents\Infrastructure\WordPressJobQueue;
-use WPAgents\Infrastructure\WordPressSkillRepository;
-use WPAgents\Infrastructure\WpdbRunRepository;
-use WPAgents\Tests\Support\ScriptedModelClient;
-use WPAgents\WordPress\Plugin;
+use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Execute\ExecuteRunHandler;
+use AgentStudio\Application\Execute\ToolExecutor;
+use AgentStudio\Application\Execute\ToolRegistryFactory;
+use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Contracts\Notifier;
+use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Infrastructure\AbilitiesApiGateway;
+use AgentStudio\Infrastructure\AgentConfigMapper;
+use AgentStudio\Infrastructure\SystemClock;
+use AgentStudio\Infrastructure\WordPressAgentRepository;
+use AgentStudio\Infrastructure\WordPressIdentity;
+use AgentStudio\Infrastructure\WordPressJobQueue;
+use AgentStudio\Infrastructure\WordPressSkillRepository;
+use AgentStudio\Infrastructure\WpdbRunRepository;
+use AgentStudio\Tests\Support\ScriptedModelClient;
+use AgentStudio\WordPress\Plugin;
 
 /**
  * Base for tests that run against a real WordPress. They wire the real
@@ -59,7 +59,7 @@ abstract class IntegrationTestCase extends WP_UnitTestCase
      */
     protected function createAgent(array $config, string $title = 'Test agent', string $instructions = 'Do the job.'): int
     {
-        $id = wp_insert_post(['post_type' => 'wpa_agent', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $instructions]);
+        $id = wp_insert_post(['post_type' => 'agent_studio_agent', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $instructions]);
         AgentConfigMapper::write($id, array_merge(['status' => 'active', 'run_as' => $this->adminId], $config));
 
         return (int) $id;

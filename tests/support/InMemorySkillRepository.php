@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\SkillRepository;
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Contracts\SkillRepository;
+use AgentStudio\Domain\Skill\Skill;
 
 final class InMemorySkillRepository implements SkillRepository
 {

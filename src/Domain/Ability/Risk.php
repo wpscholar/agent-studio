@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Ability;
+namespace AgentStudio\Domain\Ability;
 
 /**
  * How much damage an ability can do. Drives the approval policy.

@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Ability\Risk;
-use WPAgents\Domain\Agent\ApprovalMode;
+use AgentStudio\Domain\Ability\Risk;
+use AgentStudio\Domain\Agent\ApprovalMode;
 
 final class ApprovalModeTest extends TestCase
 {
@@ -29,7 +28,9 @@ final class ApprovalModeTest extends TestCase
         ];
     }
 
-    #[DataProvider('cases')]
+    /**
+     * @dataProvider cases
+     */
     public function testRequiresApproval(ApprovalMode $mode, Risk $risk, bool $expected): void
     {
         $this->assertSame($expected, $mode->requiresApproval($risk));

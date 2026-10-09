@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
 /**
  * Runs code as a given site user, so ability permission checks apply to the agent.

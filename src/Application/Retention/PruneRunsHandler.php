@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Retention;
+namespace AgentStudio\Application\Retention;
 
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Contracts\Settings;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Contracts\Settings;
 
 final class PruneRunsHandler
 {

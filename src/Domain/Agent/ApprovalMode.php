@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Agent;
+namespace AgentStudio\Domain\Agent;
 
-use WPAgents\Domain\Ability\Risk;
+use AgentStudio\Domain\Ability\Risk;
 
 /**
  * Decides which ability calls need a human to approve them first.

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Skill\Skill;
-use WPAgents\Domain\Skill\SkillMarkdown;
+use AgentStudio\Domain\Skill\Skill;
+use AgentStudio\Domain\Skill\SkillMarkdown;
 
 final class SkillMarkdownTest extends TestCase
 {

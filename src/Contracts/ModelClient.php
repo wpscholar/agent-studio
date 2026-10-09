@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
-use WPAgents\Contracts\Model\ModelException;
-use WPAgents\Contracts\Model\ModelRequest;
-use WPAgents\Contracts\Model\ModelResponse;
+use AgentStudio\Contracts\Model\ModelException;
+use AgentStudio\Contracts\Model\ModelRequest;
+use AgentStudio\Contracts\Model\ModelResponse;
 
 interface ModelClient
 {

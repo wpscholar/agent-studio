@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Application\Prompt\PromptBuilder;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Skill\Skill;
 
 final class PromptBuilderTest extends TestCase
 {

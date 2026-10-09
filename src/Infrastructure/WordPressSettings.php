@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
-use WPAgents\Contracts\Settings;
+use AgentStudio\Contracts\Settings;
 
 final class WordPressSettings implements Settings
 {
-    public const OPTION = 'wpa_settings';
+    public const OPTION = 'agent_studio_settings';
     public const DEFAULT_RETENTION_DAYS = 30;
 
     public function runRetentionDays(): int
@@ -23,6 +23,6 @@ final class WordPressSettings implements Settings
          *
          * @param int $days Default 30.
          */
-        return max(0, (int) apply_filters('wpa_run_retention_days', $days));
+        return max(0, (int) apply_filters('agent_studio_run_retention_days', $days));
     }
 }

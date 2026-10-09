@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Run;
+namespace AgentStudio\Domain\Run;
 
 /**
  * One line of the run log.

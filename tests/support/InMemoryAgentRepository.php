@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
 
 final class InMemoryAgentRepository implements AgentRepository
 {

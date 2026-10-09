@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Run;
+namespace AgentStudio\Application\Run;
 
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Run\RunStatus;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Run\RunStatus;
 
 final class CancelRunHandler
 {

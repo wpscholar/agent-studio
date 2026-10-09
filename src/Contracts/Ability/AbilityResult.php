@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts\Ability;
+namespace AgentStudio\Contracts\Ability;
 
 final class AbilityResult
 {

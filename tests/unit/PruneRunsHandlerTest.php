@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Application\Retention\PruneRunsHandler;
-use WPAgents\Contracts\Settings;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Tests\Support\TestWorld;
+use AgentStudio\Application\Retention\PruneRunsHandler;
+use AgentStudio\Contracts\Settings;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Tests\Support\TestWorld;
 
 final class PruneRunsHandlerTest extends TestCase
 {

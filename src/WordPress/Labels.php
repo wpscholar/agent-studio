@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
-use WPAgents\Domain\Ability\Risk;
-use WPAgents\Domain\Agent\ApprovalMode;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\Domain\Run\StepKind;
+use AgentStudio\Domain\Ability\Risk;
+use AgentStudio\Domain\Agent\ApprovalMode;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\Domain\Run\StepKind;
 
 /**
  * Translatable names for the values the Domain only knows as codes.
@@ -18,65 +18,66 @@ final class Labels
     public static function risk(Risk $risk): string
     {
         return match ($risk) {
-            Risk::Read => __('Read', 'wp-agents'),
-            Risk::Write => __('Write', 'wp-agents'),
-            Risk::Destructive => __('Destructive', 'wp-agents'),
-            Risk::External => __('External', 'wp-agents'),
+            Risk::Read => __('Read', 'agent-studio'),
+            Risk::Write => __('Write', 'agent-studio'),
+            Risk::Destructive => __('Destructive', 'agent-studio'),
+            Risk::External => __('External', 'agent-studio'),
         };
     }
 
     public static function riskHelp(Risk $risk): string
     {
         return match ($risk) {
-            Risk::Read => __('Reads data and changes nothing.', 'wp-agents'),
-            Risk::Write => __('Creates or changes site data.', 'wp-agents'),
-            Risk::Destructive => __('Deletes data or changes it in a way that is hard to undo.', 'wp-agents'),
-            Risk::External => __('Has an effect outside the site, such as sending email.', 'wp-agents'),
+            Risk::Read => __('Reads data and changes nothing.', 'agent-studio'),
+            Risk::Write => __('Creates or changes site data.', 'agent-studio'),
+            Risk::Destructive => __('Deletes data or changes it in a way that is hard to undo.', 'agent-studio'),
+            Risk::External => __('Has an effect outside the site, such as sending email.', 'agent-studio'),
         };
     }
 
     public static function status(RunStatus $status): string
     {
         return match ($status) {
-            RunStatus::Queued => __('Queued', 'wp-agents'),
-            RunStatus::Running => __('Running', 'wp-agents'),
-            RunStatus::AwaitingApproval => __('Needs approval', 'wp-agents'),
-            RunStatus::Completed => __('Completed', 'wp-agents'),
-            RunStatus::Failed => __('Failed', 'wp-agents'),
-            RunStatus::Cancelled => __('Cancelled', 'wp-agents'),
-            RunStatus::Skipped => __('Skipped', 'wp-agents'),
+            RunStatus::Queued => __('Queued', 'agent-studio'),
+            RunStatus::Running => __('Running', 'agent-studio'),
+            RunStatus::AwaitingApproval => __('Needs approval', 'agent-studio'),
+            RunStatus::Completed => __('Completed', 'agent-studio'),
+            RunStatus::Failed => __('Failed', 'agent-studio'),
+            RunStatus::Cancelled => __('Cancelled', 'agent-studio'),
+            RunStatus::Skipped => __('Skipped', 'agent-studio'),
         };
     }
 
     public static function trigger(TriggerType $type): string
     {
         return match ($type) {
-            TriggerType::PostStatus => __('Post status change', 'wp-agents'),
-            TriggerType::UserRegistered => __('New user', 'wp-agents'),
-            TriggerType::CommentPosted => __('New comment', 'wp-agents'),
-            TriggerType::Webhook => __('Webhook', 'wp-agents'),
-            TriggerType::Manual => __('Manual', 'wp-agents'),
+            TriggerType::PostStatus => __('Post status change', 'agent-studio'),
+            TriggerType::UserRegistered => __('New user', 'agent-studio'),
+            TriggerType::CommentPosted => __('New comment', 'agent-studio'),
+            TriggerType::Schedule => __('Schedule', 'agent-studio'),
+            TriggerType::Webhook => __('Webhook', 'agent-studio'),
+            TriggerType::Manual => __('Manual', 'agent-studio'),
         };
     }
 
     public static function approval(ApprovalMode $mode): string
     {
         return match ($mode) {
-            ApprovalMode::Writes => __('Ask before any change (recommended)', 'wp-agents'),
-            ApprovalMode::Destructive => __('Ask only before destructive or external actions', 'wp-agents'),
-            ApprovalMode::Never => __('Never ask', 'wp-agents'),
+            ApprovalMode::Writes => __('Ask before any change (recommended)', 'agent-studio'),
+            ApprovalMode::Destructive => __('Ask only before destructive or external actions', 'agent-studio'),
+            ApprovalMode::Never => __('Never ask', 'agent-studio'),
         };
     }
 
     public static function step(StepKind $kind): string
     {
         return match ($kind) {
-            StepKind::Model => __('Model', 'wp-agents'),
-            StepKind::ToolCall => __('Tool call', 'wp-agents'),
-            StepKind::ToolResult => __('Tool result', 'wp-agents'),
-            StepKind::Approval => __('Approval', 'wp-agents'),
-            StepKind::Note => __('Note', 'wp-agents'),
-            StepKind::Error => __('Error', 'wp-agents'),
+            StepKind::Model => __('Model', 'agent-studio'),
+            StepKind::ToolCall => __('Tool call', 'agent-studio'),
+            StepKind::ToolResult => __('Tool result', 'agent-studio'),
+            StepKind::Approval => __('Approval', 'agent-studio'),
+            StepKind::Note => __('Note', 'agent-studio'),
+            StepKind::Error => __('Error', 'agent-studio'),
         };
     }
 }

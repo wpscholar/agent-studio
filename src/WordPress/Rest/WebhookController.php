@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Rest;
+namespace AgentStudio\WordPress\Rest;
 
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
-use WPAgents\Application\Dispatch\DispatchOutcome;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\Clock;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Application\Dispatch\DispatchOutcome;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
 
 /**
- * POST /wp-json/wp-agents/v1/webhooks/{agent_id}
+ * POST /wp-json/agent-studio/v1/webhooks/{agent_id}
  *
  * Lets an outside system start an agent. There is no login: the caller proves
  * who it is by signing the request with the agent's secret.
  *
- *   X-WPA-Timestamp: <unix seconds, within 5 minutes of now>
- *   X-WPA-Signature: sha256=<hex HMAC-SHA256 of "{timestamp}.{raw body}" using the secret>
+ *   X-Agent-Studio-Timestamp: <unix seconds, within 5 minutes of now>
+ *   X-Agent-Studio-Signature: sha256=<hex HMAC-SHA256 of "{timestamp}.{raw body}" using the secret>
  *   Idempotency-Key: <optional; the same key within 24 hours starts the agent once>
  */
 final class WebhookController
@@ -45,7 +45,7 @@ final class WebhookController
     public function registerRoutes(): void
     {
         register_rest_route(
-            'wp-agents/v1',
+            'agent-studio/v1',
             '/webhooks/(?P<agent>\d+)',
             [
                 'methods' => 'POST',
@@ -65,19 +65,19 @@ final class WebhookController
 
         // Every reason an agent cannot take webhooks looks the same from the outside.
         if ($agent === null || ! $agent->isActive() || ! $agent->hasTrigger(TriggerType::Webhook) || $agent->webhookSecret === '') {
-            return new WP_Error('wpa_webhook_not_found', __('Webhook not found.', 'wp-agents'), ['status' => 404]);
+            return new WP_Error('agent_studio_webhook_not_found', __('Webhook not found.', 'agent-studio'), ['status' => 404]);
         }
 
         $body = $request->get_body();
         if (strlen($body) > self::MAX_BODY_BYTES) {
-            return new WP_Error('wpa_webhook_too_large', __('The request body is too large.', 'wp-agents'), ['status' => 413]);
+            return new WP_Error('agent_studio_webhook_too_large', __('The request body is too large.', 'agent-studio'), ['status' => 413]);
         }
 
-        $timestamp = (string) $request->get_header('x_wpa_timestamp');
-        $signature = (string) $request->get_header('x_wpa_signature');
+        $timestamp = (string) $request->get_header('x_agent_studio_timestamp');
+        $signature = (string) $request->get_header('x_agent_studio_signature');
 
         if (! self::isValidSignature($agent->webhookSecret, $timestamp, $body, $signature, $this->clock->now())) {
-            return new WP_Error('wpa_webhook_unauthorized', __('The signature is missing or invalid.', 'wp-agents'), ['status' => 401]);
+            return new WP_Error('agent_studio_webhook_unauthorized', __('The signature is missing or invalid.', 'agent-studio'), ['status' => 401]);
         }
 
         $key = (string) $request->get_header('idempotency_key');
@@ -96,8 +96,8 @@ final class WebhookController
         return match ($dispatch->outcome) {
             DispatchOutcome::Queued => new WP_REST_Response(['status' => 'queued', 'run_id' => $dispatch->runId], 202),
             DispatchOutcome::Duplicate => new WP_REST_Response(['status' => 'duplicate', 'run_id' => $dispatch->runId], 200),
-            DispatchOutcome::RateLimited => new WP_Error('wpa_webhook_rate_limited', __('This agent has reached its hourly run limit.', 'wp-agents'), ['status' => 429]),
-            DispatchOutcome::Skipped => new WP_Error('wpa_webhook_not_found', __('Webhook not found.', 'wp-agents'), ['status' => 404]),
+            DispatchOutcome::RateLimited => new WP_Error('agent_studio_webhook_rate_limited', __('This agent has reached its hourly run limit.', 'agent-studio'), ['status' => 429]),
+            DispatchOutcome::Skipped => new WP_Error('agent_studio_webhook_not_found', __('Webhook not found.', 'agent-studio'), ['status' => 404]),
         };
     }
 

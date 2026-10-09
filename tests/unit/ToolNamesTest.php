@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Ability\ToolNames;
+use AgentStudio\Domain\Ability\ToolNames;
 
 final class ToolNamesTest extends TestCase
 {
     public function testSlashBecomesDoubleUnderscore(): void
     {
-        $this->assertSame('wp-agents__get-post', ToolNames::forAbility('wp-agents/get-post'));
+        $this->assertSame('agent-studio__get-post', ToolNames::forAbility('agent-studio/get-post'));
     }
 
     public function testResultMatchesProviderRules(): void

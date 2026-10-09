@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Prompt;
+namespace AgentStudio\Application\Prompt;
 
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Skill\Skill;
 
 /**
  * Builds the text the model sees: the agent's instructions plus fixed safety rules,
@@ -16,6 +16,7 @@ use WPAgents\Domain\Skill\Skill;
 final class PromptBuilder
 {
     private const MAX_EVENT_CHARS = 20000;
+
 
     /**
      * @param list<Skill> $skills Skills this agent is allowed to load.
@@ -50,6 +51,7 @@ final class PromptBuilder
         return $prompt;
     }
 
+
     public function triggerMessage(Run $run): string
     {
         $json = json_encode(
@@ -75,6 +77,7 @@ final class PromptBuilder
             TriggerType::PostStatus => 'A post changed status.',
             TriggerType::UserRegistered => 'A new user account was created.',
             TriggerType::CommentPosted => 'A new comment was submitted.',
+            TriggerType::Schedule => 'It is time for your scheduled run.',
             TriggerType::Webhook => 'An external system called your webhook.',
             TriggerType::Manual => 'You were started manually.',
         };

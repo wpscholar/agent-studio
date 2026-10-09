@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\AgentStatus;
-use WPAgents\Domain\Agent\ApprovalMode;
-use WPAgents\Domain\Agent\Trigger;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\AgentStatus;
+use AgentStudio\Domain\Agent\ApprovalMode;
+use AgentStudio\Domain\Agent\Schedule;
+use AgentStudio\Domain\Agent\Trigger;
+use AgentStudio\Domain\Agent\TriggerType;
 
 /**
  * Converts between an agent's stored configuration (a JSON array in post meta)
@@ -30,6 +31,7 @@ final class AgentConfigMapper
             'run_as' => 0,
             'max_steps' => 10,
             'max_runs_per_hour' => 30,
+            'provider' => '',
             'model' => '',
             'webhook_secret' => '',
         ];
@@ -67,6 +69,7 @@ final class AgentConfigMapper
             'run_as' => max(0, (int) self::number($config['run_as'])),
             'max_steps' => max(Agent::MIN_STEPS, min(Agent::MAX_STEPS, (int) self::number($config['max_steps']))),
             'max_runs_per_hour' => max(1, min(Agent::MAX_RUNS_PER_HOUR_LIMIT, (int) self::number($config['max_runs_per_hour']))),
+            'provider' => preg_replace('/[^a-z0-9_-]/', '', strtolower(self::string($config['provider']))) ?? '',
             'model' => substr(trim(self::string($config['model'])), 0, 100),
             'webhook_secret' => preg_replace('/[^A-Za-z0-9]/', '', self::string($config['webhook_secret'])) ?? '',
         ];
@@ -100,7 +103,8 @@ final class AgentConfigMapper
             $config['max_steps'],
             $config['max_runs_per_hour'],
             $config['model'],
-            $config['webhook_secret']
+            $config['webhook_secret'],
+            $config['provider']
         );
     }
 
@@ -132,6 +136,12 @@ final class AgentConfigMapper
      */
     private static function cleanTriggerConfig(Trigger $trigger): array
     {
+        if ($trigger->type === TriggerType::Schedule) {
+            $schedule = Schedule::fromConfig($trigger->config);
+
+            return $schedule === null ? ['every' => Schedule::DAILY, 'at' => '09:00'] : $schedule->toConfig();
+        }
+
         $clean = [];
         foreach (['post_types', 'from', 'to', 'roles'] as $key) {
             $list = $trigger->list($key);

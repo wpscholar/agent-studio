@@ -12,6 +12,15 @@ composer test:unit
 
 These wire the real repositories and the real Abilities API and fake only the AI model.
 
+In the devcontainer the scaffolding is already installed by setup:
+
+```bash
+composer test:integration
+```
+
+Elsewhere, install it first. It needs PHP with mysqli, git and curl, and uses
+WP-CLI when present:
+
 ```bash
 bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
 composer test:integration

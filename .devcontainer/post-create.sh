@@ -1,15 +1,32 @@
 #!/usr/bin/env bash
+# Sets up the environment inside the app container: dependencies, a WordPress
+# site installed with WP-CLI, the plugin activated, and the integration test
+# scaffolding. Runs on container creation (VS Code, Codespaces, CI) and from
+# `make setup`. Safe to re-run.
 set -euo pipefail
 
 cd /workspace
 
-[ -f composer.json ] && composer install --prefer-dist --no-interaction
-[ -f package.json ] && npm ci
+composer install --prefer-dist --no-interaction
+npm ci
 
-# Wait for WordPress to be ready
-for i in $(seq 1 30); do
-  if curl -fsS --max-time 2 http://wordpress/ > /dev/null 2>&1; then break; fi
+# The wordpress container copies core and writes wp-config.php on first start.
+for _ in $(seq 1 60); do
+  [ -f /var/www/html/wp-config.php ] && break
   sleep 2
 done
 
-echo "Devcontainer ready. Plugin mounted at wp-content/plugins/wp-agents."
+site() { wp --path=/var/www/html "$@"; }
+
+if ! site core is-installed 2> /dev/null; then
+  site core install --url="$WP_URL" --title="Agent Studio" \
+    --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email
+fi
+# Follows WP_PORT / WP_URL changes on an existing site.
+site option update home "$WP_URL" > /dev/null
+site option update siteurl "$WP_URL" > /dev/null
+site plugin activate agent-studio
+
+bash bin/install-wp-tests.sh
+
+echo "Ready: $WP_URL (admin / password). Mailpit: http://localhost:${MAILPIT_PORT:-8025}"

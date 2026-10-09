@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Admin;
+namespace AgentStudio\WordPress\Admin;
 
 /**
  * One-time admin notices that survive a redirect, stored per user.
@@ -38,6 +38,6 @@ final class Flash
 
     private static function key(): string
     {
-        return 'wpa_flash_' . get_current_user_id();
+        return 'agent_studio_flash_' . get_current_user_id();
     }
 }

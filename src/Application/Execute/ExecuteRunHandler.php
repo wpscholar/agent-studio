@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Execute;
+namespace AgentStudio\Application\Execute;
 
 use Throwable;
-use WPAgents\Application\Prompt\PromptBuilder;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\Identity;
-use WPAgents\Contracts\Model\ModelException;
-use WPAgents\Contracts\Model\ModelRequest;
-use WPAgents\Contracts\ModelClient;
-use WPAgents\Contracts\Notifier;
-use WPAgents\Contracts\RecursionGuard;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Conversation\Message;
-use WPAgents\Domain\Conversation\Transcript;
-use WPAgents\Domain\Run\PendingApproval;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\StepKind;
+use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\Identity;
+use AgentStudio\Contracts\Model\ModelException;
+use AgentStudio\Contracts\Model\ModelRequest;
+use AgentStudio\Contracts\ModelClient;
+use AgentStudio\Contracts\Notifier;
+use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Conversation\Message;
+use AgentStudio\Domain\Conversation\Transcript;
+use AgentStudio\Domain\Run\PendingApproval;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\StepKind;
 
 /**
  * Runs the agent loop: ask the model, carry out its tool calls, repeat.
@@ -130,7 +130,14 @@ final class ExecuteRunHandler
 
             try {
                 $response = $this->model->generate(
-                    new ModelRequest($system, $run->transcript(), $registry->specs(), $agent->model, self::MAX_OUTPUT_TOKENS)
+                    new ModelRequest(
+                        $system,
+                        $run->transcript(),
+                        $registry->specs(),
+                        $agent->model,
+                        self::MAX_OUTPUT_TOKENS,
+                        $agent->provider
+                    )
                 );
             } catch (ModelException $e) {
                 $run->fail('Model error: ' . $e->getMessage(), $this->clock->now());

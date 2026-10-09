@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts\Model;
+namespace AgentStudio\Contracts\Model;
 
 use RuntimeException;
 

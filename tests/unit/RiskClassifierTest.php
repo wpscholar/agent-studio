@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Ability\Risk;
-use WPAgents\Domain\Ability\RiskClassifier;
+use AgentStudio\Domain\Ability\Risk;
+use AgentStudio\Domain\Ability\RiskClassifier;
 
 final class RiskClassifierTest extends TestCase
 {
@@ -32,14 +32,14 @@ final class RiskClassifierTest extends TestCase
 
     public function testExplicitRiskWinsOverAnnotations(): void
     {
-        $meta = ['wpa' => ['risk' => 'external'], 'annotations' => ['readonly' => true]];
+        $meta = ['agent_studio' => ['risk' => 'external'], 'annotations' => ['readonly' => true]];
 
         $this->assertSame(Risk::External, RiskClassifier::fromMeta($meta));
     }
 
     public function testInvalidExplicitRiskIsIgnored(): void
     {
-        $meta = ['wpa' => ['risk' => 'harmless'], 'annotations' => ['destructive' => true]];
+        $meta = ['agent_studio' => ['risk' => 'harmless'], 'annotations' => ['destructive' => true]];
 
         $this->assertSame(Risk::Destructive, RiskClassifier::fromMeta($meta));
     }

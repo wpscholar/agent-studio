@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Rest;
+namespace AgentStudio\WordPress\Rest;
 
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
-use WPAgents\Application\Dispatch\DispatchOutcome;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\StepKind;
-use WPAgents\WordPress\Capabilities;
+use AgentStudio\Application\Dispatch\DispatchOutcome;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\StepKind;
+use AgentStudio\WordPress\Capabilities;
 
 /**
  * Direct calls for people and scripts that are logged in (cookie + nonce, or an application password).
  *
- *   POST /wp-json/wp-agents/v1/agents/{id}/run   Start an agent now. Body: {"payload": {...}}
- *   GET  /wp-json/wp-agents/v1/runs/{id}         Check on a run.
+ *   POST /wp-json/agent-studio/v1/agents/{id}/run   Start an agent now. Body: {"payload": {...}}
+ *   GET  /wp-json/agent-studio/v1/runs/{id}         Check on a run.
  */
 final class AgentsController
 {
@@ -40,7 +40,7 @@ final class AgentsController
     public function registerRoutes(): void
     {
         register_rest_route(
-            'wp-agents/v1',
+            'agent-studio/v1',
             '/agents/(?P<id>\d+)/run',
             [
                 'methods' => 'POST',
@@ -50,7 +50,7 @@ final class AgentsController
         );
 
         register_rest_route(
-            'wp-agents/v1',
+            'agent-studio/v1',
             '/runs/(?P<id>\d+)',
             [
                 'methods' => 'GET',
@@ -67,7 +67,7 @@ final class AgentsController
     {
         $agentId = (int) $request->get_param('id');
         if ($this->agents->find($agentId) === null) {
-            return new WP_Error('wpa_agent_not_found', __('Agent not found.', 'wp-agents'), ['status' => 404]);
+            return new WP_Error('agent_studio_agent_not_found', __('Agent not found.', 'agent-studio'), ['status' => 404]);
         }
 
         $payload = $request->get_param('payload');
@@ -78,7 +78,7 @@ final class AgentsController
 
         $dispatch = $result->forAgent($agentId);
         if ($dispatch === null || $dispatch->outcome !== DispatchOutcome::Queued) {
-            return new WP_Error('wpa_run_not_started', __('The agent could not be started.', 'wp-agents'), ['status' => 409]);
+            return new WP_Error('agent_studio_run_not_started', __('The agent could not be started.', 'agent-studio'), ['status' => 409]);
         }
 
         return new WP_REST_Response(['status' => 'queued', 'run_id' => $dispatch->runId], 202);
@@ -91,7 +91,7 @@ final class AgentsController
     {
         $run = $this->runs->find((int) $request->get_param('id'));
         if ($run === null) {
-            return new WP_Error('wpa_run_not_found', __('Run not found.', 'wp-agents'), ['status' => 404]);
+            return new WP_Error('agent_studio_run_not_found', __('Run not found.', 'agent-studio'), ['status' => 404]);
         }
 
         return new WP_REST_Response(self::summarize($run));

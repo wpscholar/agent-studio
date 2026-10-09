@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 use RuntimeException;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\RunStatus;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\RunStatus;
 
 final class WpdbRunRepository implements RunRepository
 {
@@ -17,7 +17,7 @@ final class WpdbRunRepository implements RunRepository
 
         $inserted = $wpdb->insert(Schema::table(), $this->row($run, true));
         if ($inserted === false) {
-            throw new RuntimeException('The run could not be stored: ' . $wpdb->last_error);
+            throw new RuntimeException('The run could not be stored: ' . $wpdb->last_error); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- not output; logged by the caller.
         }
 
         $run->assignId((int) $wpdb->insert_id);
