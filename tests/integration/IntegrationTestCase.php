@@ -24,7 +24,9 @@ use AgentStudio\Application\Prompt\PromptBuilder;
 use AgentStudio\Contracts\AbilityGateway;
 use AgentStudio\Contracts\Notifier;
 use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Domain\Agent\AgentStatus;
 use AgentStudio\Infrastructure\AgentConfigMapper;
+use AgentStudio\Infrastructure\AgentPostStatus;
 use AgentStudio\Infrastructure\SystemClock;
 use AgentStudio\Infrastructure\WordPressAgentRepository;
 use AgentStudio\Infrastructure\WordPressIdentity;
@@ -69,10 +71,29 @@ abstract class IntegrationTestCase extends WP_UnitTestCase
      */
     protected function createAgent(array $config, string $title = 'Test agent', string $instructions = 'Do the job.'): int
     {
-        $id = wp_insert_post(['post_type' => 'agent_studio_agent', 'post_status' => 'publish', 'post_title' => $title, 'post_content' => $instructions]);
-        AgentConfigMapper::write($id, array_merge(['status' => 'active', 'run_as' => $this->adminId], $config));
+        // The status is the post status; "status" in $config is a shortcut for it.
+        $status = AgentStatus::fromString(is_string($config['status'] ?? null) ? $config['status'] : 'active');
+        unset($config['status']);
+
+        $id = wp_insert_post(['post_type' => 'agent_studio_agent', 'post_status' => AgentPostStatus::toPost($status), 'post_title' => $title, 'post_content' => $instructions]);
+        AgentConfigMapper::write($id, array_merge(['run_as' => $this->adminId], $config));
 
         return (int) $id;
+    }
+
+    /**
+     * Calls the plugin's REST API as the current user.
+     *
+     * @param array<string, mixed> $body
+     */
+    protected function rest(string $method, string $path, array $body = []): \WP_REST_Response
+    {
+        $request = new \WP_REST_Request($method, '/agent-studio/v1/' . $path);
+        foreach ($body as $key => $value) {
+            $request->set_param($key, $value);
+        }
+
+        return rest_do_request($request);
     }
 
     protected function executor(): ExecuteRunHandler

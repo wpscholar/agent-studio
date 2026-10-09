@@ -37,12 +37,27 @@ final class PluginTest extends IntegrationTestCase
         clean_post_cache($id);
         delete_option('agent_studio_content_version');
 
-        Plugin::container()->get(PostTypeRegistrar::class)->migrateLegacySkills();
+        Plugin::container()->get(PostTypeRegistrar::class)->migrate();
 
         $skill = (new WordPressSkillRepository())->findBySlug('tone');
         $this->assertNotNull($skill);
         $this->assertSame('Use for tone.', $skill->description);
         $this->assertSame('agent_studio_kb', get_post_type($id));
+    }
+
+    public function test_agents_saved_before_statuses_were_post_statuses_keep_their_status(): void
+    {
+        $paused = wp_insert_post(['post_type' => 'agent_studio_agent', 'post_status' => 'publish', 'post_title' => 'Old paused']);
+        $active = wp_insert_post(['post_type' => 'agent_studio_agent', 'post_status' => 'publish', 'post_title' => 'Old active']);
+        update_post_meta($paused, '_agent_studio_config', wp_slash((string) wp_json_encode(['status' => 'paused'])));
+        update_post_meta($active, '_agent_studio_config', wp_slash((string) wp_json_encode(['status' => 'active'])));
+        update_option('agent_studio_content_version', '2');
+
+        Plugin::container()->get(PostTypeRegistrar::class)->migrate();
+
+        $this->assertSame('agent_studio_paused', get_post_status($paused));
+        $this->assertSame('publish', get_post_status($active));
+        $this->assertSame('3', get_option('agent_studio_content_version'));
     }
 
     public function test_administrators_have_every_agent_studio_capability(): void

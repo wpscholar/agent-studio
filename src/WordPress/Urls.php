@@ -4,23 +4,31 @@ declare(strict_types=1);
 
 namespace AgentStudio\WordPress;
 
-use AgentStudio\Infrastructure\PostTypes;
+use AgentStudio\WordPress\Admin\Menu;
 
 final class Urls
 {
     public static function agents(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT);
+        return self::page(Menu::AGENTS);
     }
 
     public static function editAgent(int $agentId): string
     {
-        return admin_url('post.php?post=' . $agentId . '&action=edit');
+        return add_query_arg('agent', $agentId, self::agents());
+    }
+
+    /**
+     * @param string $template Optionally, a template to start from.
+     */
+    public static function newAgent(string $template = ''): string
+    {
+        return add_query_arg('agent', $template === '' ? 'new' : 'new:' . rawurlencode($template), self::agents());
     }
 
     public static function runs(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-runs');
+        return self::page(Menu::RUNS);
     }
 
     public static function run(int $runId): string
@@ -30,17 +38,12 @@ final class Urls
 
     public static function abilities(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-abilities');
-    }
-
-    public static function templates(): string
-    {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-templates');
+        return self::page(Menu::ABILITIES);
     }
 
     public static function skills(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-skills');
+        return self::page(Menu::SKILLS);
     }
 
     /**
@@ -53,7 +56,7 @@ final class Urls
 
     public static function connections(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-connections');
+        return self::page(Menu::CONNECTIONS);
     }
 
     public static function connection(int $connectionId): string
@@ -63,7 +66,7 @@ final class Urls
 
     public static function channels(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-channels');
+        return self::page(Menu::CHANNELS);
     }
 
     public static function channel(int $channelId): string
@@ -74,5 +77,10 @@ final class Urls
     public static function webhook(int $agentId): string
     {
         return rest_url('agent-studio/v1/webhooks/' . $agentId);
+    }
+
+    private static function page(string $slug): string
+    {
+        return admin_url('admin.php?page=' . $slug);
     }
 }

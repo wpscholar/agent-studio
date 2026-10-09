@@ -1,5 +1,4 @@
 import { createRoot } from '@wordpress/element';
-import '../admin.js';
 import App from './App.jsx';
 
 function mount() {

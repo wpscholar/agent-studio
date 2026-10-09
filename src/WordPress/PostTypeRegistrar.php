@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AgentStudio\WordPress;
 
+use AgentStudio\Infrastructure\AgentConfigMapper;
 use AgentStudio\Infrastructure\PostTypes;
 
 /**
@@ -15,12 +16,13 @@ use AgentStudio\Infrastructure\PostTypes;
 final class PostTypeRegistrar
 {
     private const MIGRATION_OPTION = 'agent_studio_content_version';
-    private const MIGRATION_VERSION = '2';
+
+    /** 2: skills became knowledge. 3: an agent's status became its post status. */
+    private const MIGRATION_VERSION = 3;
 
     public function register(): void
     {
         add_action('init', [$this, 'registerPostTypes']);
-        add_filter('use_block_editor_for_post_type', [$this, 'useClassicEditor'], 10, 2);
         add_filter('wp_insert_post_data', [$this, 'keepPublished']);
     }
 
@@ -45,12 +47,12 @@ final class PostTypeRegistrar
                 ],
                 'description' => __('Automations that use AI and your site abilities.', 'agent-studio'),
                 'public' => false,
+                // The Agents screen (see Admin\Menu) replaces the stock list and editor. show_ui stays on so
+                // old links to them still load far enough to be redirected there.
                 'show_ui' => true,
-                'show_in_menu' => true,
-                'menu_position' => 58,
-                'menu_icon' => 'dashicons-superhero',
+                'show_in_menu' => false,
                 'show_in_rest' => false,
-                'supports' => ['title', 'editor'],
+                'supports' => ['title', 'editor', 'author'],
                 'has_archive' => false,
                 'rewrite' => false,
                 'query_var' => false,
@@ -157,19 +159,50 @@ final class PostTypeRegistrar
             ]
         );
 
-        $this->migrateLegacySkills();
+        register_post_status(
+            PostTypes::STATUS_PAUSED,
+            [
+                'label' => _x('Paused', 'agent status', 'agent-studio'),
+                'public' => false,
+                'internal' => false,
+                'protected' => true,
+                'exclude_from_search' => true,
+                'show_in_admin_all_list' => true,
+                'show_in_admin_status_list' => false,
+                /* translators: %s: number of agents */
+                'label_count' => _n_noop('Paused <span class="count">(%s)</span>', 'Paused <span class="count">(%s)</span>', 'agent-studio'),
+            ]
+        );
+
+        $this->migrate();
+    }
+
+    /**
+     * Brings stored content up to date with this version of the plugin, once.
+     */
+    public function migrate(): void
+    {
+        $version = (int) get_option(self::MIGRATION_OPTION, 0);
+        if ($version >= self::MIGRATION_VERSION) {
+            return;
+        }
+
+        if ($version < 2) {
+            $this->migrateLegacySkills();
+        }
+
+        // Below version 3 (the only case left here), status was in the settings.
+        $this->migrateAgentStatuses();
+
+        update_option(self::MIGRATION_OPTION, (string) self::MIGRATION_VERSION, false);
     }
 
     /**
      * Skills used to be their own post type. Moves them into knowledge, typed "skill".
      * Revisions follow their parent, so history is kept.
      */
-    public function migrateLegacySkills(): void
+    private function migrateLegacySkills(): void
     {
-        if (get_option(self::MIGRATION_OPTION) === self::MIGRATION_VERSION) {
-            return;
-        }
-
         $ids = get_posts(
             [
                 'post_type' => PostTypes::LEGACY_SKILL,
@@ -188,20 +221,39 @@ final class PostTypeRegistrar
             clean_post_cache((int) $id);
             wp_set_object_terms((int) $id, PostTypes::TYPE_SKILL, PostTypes::KNOWLEDGE_TYPE);
         }
-
-        update_option(self::MIGRATION_OPTION, self::MIGRATION_VERSION, false);
     }
 
     /**
-     * Agent instructions are plain text, so the classic editor is the right tool.
+     * Agents used to be always published, with "active" or "paused" in their settings.
+     * Now the post status says it: published agents that were not active become paused.
      */
-    public function useClassicEditor(bool $useBlockEditor, string $postType): bool
+    private function migrateAgentStatuses(): void
     {
-        return $postType === PostTypes::AGENT ? false : $useBlockEditor;
+        $ids = get_posts(
+            [
+                'post_type' => PostTypes::AGENT,
+                'post_status' => 'publish',
+                'numberposts' => -1,
+                'fields' => 'ids',
+                'suppress_filters' => true,
+            ]
+        );
+
+        global $wpdb;
+
+        foreach ($ids as $id) {
+            if ((AgentConfigMapper::read((int) $id)['status'] ?? '') === 'active') {
+                continue;
+            }
+
+            // Directly, so the change keeps the agent's modified date and starts nothing.
+            $wpdb->update($wpdb->posts, ['post_status' => PostTypes::STATUS_PAUSED], ['ID' => (int) $id]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            clean_post_cache((int) $id);
+        }
     }
 
     /**
-     * Agents and knowledge have no draft workflow. Saving them saves them.
+     * Knowledge has no draft workflow. Saving it saves it. (Agents do: a draft is an agent being set up.)
      *
      * @param array<string, mixed> $data
      *
@@ -209,8 +261,7 @@ final class PostTypeRegistrar
      */
     public function keepPublished(array $data): array
     {
-        $isOurs = in_array($data['post_type'] ?? '', [PostTypes::AGENT, PostTypes::KNOWLEDGE], true);
-        if ($isOurs && in_array($data['post_status'] ?? '', ['draft', 'pending'], true)) {
+        if (($data['post_type'] ?? '') === PostTypes::KNOWLEDGE && in_array($data['post_status'] ?? '', ['draft', 'pending'], true)) {
             $data['post_status'] = 'publish';
         }
 

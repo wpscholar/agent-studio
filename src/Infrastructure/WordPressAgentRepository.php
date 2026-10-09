@@ -11,7 +11,7 @@ use AgentStudio\Domain\Agent\TriggerType;
 
 /**
  * Agents are posts of type agent_studio_agent: the title is the name, the content is the
- * instructions, and everything else is a JSON blob in post meta.
+ * instructions, the post status is the agent's status, and everything else is a JSON blob in post meta.
  */
 final class WordPressAgentRepository implements AgentRepository
 {
@@ -39,7 +39,7 @@ final class WordPressAgentRepository implements AgentRepository
         $posts = get_posts(
             [
                 'post_type' => PostTypes::AGENT,
-                'post_status' => ['publish', 'draft', 'private', 'pending'],
+                'post_status' => AgentPostStatus::all(),
                 'numberposts' => -1,
                 'orderby' => 'title',
                 'order' => 'ASC',
@@ -64,7 +64,8 @@ final class WordPressAgentRepository implements AgentRepository
             $post->post_title !== '' ? $post->post_title : sprintf('Agent #%d', $post->ID),
             $post->post_content,
             AgentConfigMapper::read($post->ID),
-            (int) $post->post_author
+            (int) $post->post_author,
+            AgentPostStatus::fromPost($post->post_status)
         );
     }
 }

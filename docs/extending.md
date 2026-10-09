@@ -2,14 +2,14 @@
 
 Plugins can add four kinds of things. Each appears in Agent Studio's own screens, with the same plain-language setup as the built-in ones.
 
-| Add a…          | Hook                                     | Implement                             | Appears in                         |
-| --------------- | ---------------------------------------- | ------------------------------------- | ---------------------------------- |
-| Trigger         | `agent_studio_register_triggers`         | `Contracts\Trigger\TriggerDefinition` | Each agent's "When should it run?" |
-| Template        | `agent_studio_agent_templates` (filter)  | An array                              | Agents → Templates                 |
-| Channel type    | `agent_studio_register_channel_types`    | `Contracts\Channel\ChannelType`       | Agents → Channels → Add            |
-| Connection type | `agent_studio_register_connection_types` | `Contracts\Connection\ConnectionType` | Agents → Connections → Add         |
+| Add a…          | Hook                                     | Implement                             | Appears in                        |
+| --------------- | ---------------------------------------- | ------------------------------------- | --------------------------------- |
+| Trigger         | `agent_studio_register_triggers`         | `Contracts\Trigger\TriggerDefinition` | Each agent's "Add a trigger" list |
+| Template        | `agent_studio_agent_templates` (filter)  | An array                              | Agents → New agent                |
+| Channel type    | `agent_studio_register_channel_types`    | `Contracts\Channel\ChannelType`       | Agents → Channels → Add           |
+| Connection type | `agent_studio_register_connection_types` | `Contracts\Connection\ConnectionType` | Agents → Connections → Add        |
 
-Abilities are the fifth: register them with the WordPress Abilities API (`wp_register_ability()`) and they show up in every agent's ability list.
+Abilities are the fifth: register them with the WordPress Abilities API (`wp_register_ability()`) and they show up on Agents → Abilities and in every agent's ability list. Give them a category (`wp_register_ability_category()`) so people can filter by it.
 
 Setup forms are described as data (`Domain\Setup\SetupField`, `Domain\Setup\SetupStep`), so you never write admin UI. Field types: `text`, `url`, `secret`, `textarea`, `select`, `toggle`. Secret fields are stored encrypted and never sent back to the browser.
 
@@ -63,7 +63,7 @@ add_filter( 'agent_studio_agent_templates', function ( array $templates ) {
 } );
 ```
 
-Templates always create paused agents, so nothing runs until someone reviews it.
+Agents made from a template start as drafts, so nothing runs until someone reads them and turns them on.
 
 ## A channel type
 

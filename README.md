@@ -6,7 +6,8 @@ Build AI agents inside WordPress. An agent is a set of instructions, something t
 
 ## What v1 does
 
-- **Agents** are created in the WordPress admin: a name, plain-language instructions, triggers, an ability allowlist, optional skills, and safety settings.
+- **Agents** are created on **Agents → All agents**: a name, plain-language instructions, triggers, an ability allowlist, optional skills, a model, and safety settings, with a sentence of help on every field. An agent is a draft while you set it up, **active** once you turn it on, or **paused**; these are WordPress post statuses (`draft`, `publish`, `agent_studio_paused`). Only active agents start on their own; any agent can be run by hand to try it. Triggers and abilities are chosen from searchable, paged lists, so the screen stays quick with thousands of them.
+- **Abilities and readiness:** **Agents → Abilities** lists every ability agents can be given, with search and filters, and checks live whether this site can run agents: WordPress version, AI switched on, a connected AI provider with a model that can use abilities, background processing, and https.
 - **Triggers:** a post changes status, a user registers, a comment is posted, a schedule comes round (every hour, day or week at a set time), a signed webhook is called, someone messages the agent in a channel, an event another plugin defines (with its own filters), or you click **Run now** (also available over REST and WP-CLI).
 - **Abilities:** agents use the WordPress Abilities API (6.9+). Anything another plugin registers can be given to an agent. A few starter abilities ship so agents are useful on a plain site: get and search posts, update a post, add a private note, read and moderate comments, look up a user, send an email.
 - **Skills:** reusable SKILL.md-style instructions, managed on **Agents → Skills**. An agent always sees each skill's "when to use it" line and loads the full text only when it needs it. Write skills on that screen, import or download a `SKILL.md`, see which agents use each one, and restore any earlier version.
@@ -18,7 +19,7 @@ Build AI agents inside WordPress. An agent is a set of instructions, something t
 - **AI:** models are called through the WordPress AI Client (7.0+) with whatever provider you connected. Each agent uses **Automatic** (WordPress picks a connected model that can use the agent's abilities) or one model you choose from your connected providers. Agent Studio holds no API keys.
 - **Approval:** reads run freely. Writes, destructive actions and external effects can pause the run until you approve. Approve from the run screen or `wp agents approve`.
 - **Run log:** every run keeps its trigger data, steps, tool calls, results and token use. Old runs are pruned after 30 days (filterable).
-- **Templates:** a pre-publish reviewer, a welcome-email writer and a comment moderator, each created paused.
+- **Templates:** a pre-publish reviewer, a welcome-email writer and a comment moderator, offered when you add an agent. Each starts as a draft.
 
 ## Requirements
 
@@ -45,7 +46,7 @@ Build AI agents inside WordPress. An agent is a set of instructions, something t
 
 ## Webhooks
 
-Turn on the Webhook trigger and save. The agent edit screen shows the URL and a secret.
+Add the “Another system calls it” trigger to an agent and save. The trigger shows the URL and a secret.
 
 ```
 POST /wp-json/agent-studio/v1/webhooks/{agent_id}
