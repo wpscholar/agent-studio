@@ -7,30 +7,10 @@ namespace AgentStudio\Tests\Integration;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
-use AgentStudio\Application\Channels\ChannelService;
-use AgentStudio\Application\Channels\ConversationReplies;
-use AgentStudio\Application\Conversations\ConversationService;
-use AgentStudio\Application\Execute\ExecuteRunHandler;
-use AgentStudio\Application\Execute\ToolExecutor;
-use AgentStudio\Application\Execute\ToolRegistryFactory;
-use AgentStudio\Application\Prompt\PromptBuilder;
-use AgentStudio\Application\Approval\ApprovalTokens;
-use AgentStudio\Contracts\AbilityGateway;
-use AgentStudio\Contracts\AgentRepository;
-use AgentStudio\Contracts\ApprovalPolicy;
-use AgentStudio\Contracts\Channel\ChannelPhrases;
-use AgentStudio\Contracts\ChannelRepository;
 use AgentStudio\Contracts\ContactRepository;
-use AgentStudio\Contracts\Notifier;
-use AgentStudio\Contracts\RecursionGuard;
 use AgentStudio\Domain\Agent\TriggerType;
 use AgentStudio\Domain\Run\Run;
 use AgentStudio\Domain\Run\RunStatus;
-use AgentStudio\Infrastructure\SystemClock;
-use AgentStudio\Infrastructure\WordPressAgentRepository;
-use AgentStudio\Infrastructure\WordPressIdentity;
-use AgentStudio\Infrastructure\WordPressSkillRepository;
-use AgentStudio\Infrastructure\WpdbConversationRepository;
 use AgentStudio\WordPress\Plugin;
 
 /**
@@ -154,43 +134,6 @@ final class ChannelsTest extends IntegrationTestCase
     {
         $code = $this->call('POST', 'channels/' . $channelId . '/pairing')->get_data()['code'];
         $this->telegram($channelId, self::text($telegramUser, '/start ' . $code, 1));
-    }
-
-    /**
-     * Runs a queued run with the scripted model, wired like the plugin, so replies go back to the chat.
-     */
-    private function runChat(int $runId): void
-    {
-        $c = Plugin::container();
-        $gateway = $c->get(AbilityGateway::class);
-        $identity = new WordPressIdentity();
-        $guard = $c->get(RecursionGuard::class);
-        $clock = new SystemClock();
-        $conversations = new ConversationService(new WpdbConversationRepository(), $this->model, $clock);
-
-        (new ExecuteRunHandler(
-            new WordPressAgentRepository(),
-            $this->runs,
-            new ToolRegistryFactory($gateway, new WordPressSkillRepository()),
-            $this->model,
-            new ToolExecutor($gateway, $identity, $guard, $clock),
-            new PromptBuilder(),
-            $c->get(Notifier::class),
-            $identity,
-            $guard,
-            $clock,
-            $conversations,
-            new ConversationReplies(
-                $conversations,
-                $c->get(ChannelService::class),
-                $c->get(ChannelRepository::class),
-                $c->get(ContactRepository::class),
-                $c->get(AgentRepository::class),
-                $c->get(ApprovalPolicy::class),
-                $c->get(ApprovalTokens::class),
-                $c->get(ChannelPhrases::class)
-            )
-        ))->handle($runId);
     }
 
     private function lastRun(): Run

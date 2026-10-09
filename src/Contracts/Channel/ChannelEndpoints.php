@@ -20,5 +20,8 @@ interface ChannelEndpoints
     /** A signed link that approves or rejects, for channels that can only call a URL. */
     public function approvalLink(int $runId, bool $approve, int $channelId, string $token): string;
 
+    /** Where services send people back after they connect a channel by signing in. */
+    public function authorizationReturn(): string;
+
     public function siteName(): string;
 }

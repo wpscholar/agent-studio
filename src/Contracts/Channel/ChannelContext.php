@@ -12,12 +12,14 @@ final class ChannelContext
 {
     /**
      * @param array<string, string> $secrets    Secret setup values by field key.
-     * @param string                $inboundUrl Where the service should send messages and button presses.
+     * @param string                $inboundUrl  Where the service should send messages and button presses.
+     * @param string                $redirectUrl Where the service sends people back after connecting (for OAuth types).
      */
     public function __construct(
         public readonly array $secrets,
         public readonly string $inboundUrl,
         public readonly string $siteName,
+        public readonly string $redirectUrl = '',
     ) {
     }
 

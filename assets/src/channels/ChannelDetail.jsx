@@ -17,6 +17,7 @@ import StatusPill from '../ui/StatusPill.jsx';
 import { useNotify } from '../ui/notices.jsx';
 import { timeAgo } from '../ui/format.js';
 import BasicsFields from './BasicsFields.jsx';
+import FollowUpSteps from './FollowUpSteps.jsx';
 import { channelStatus } from './status.js';
 
 /**
@@ -92,7 +93,7 @@ export default function ChannelDetail({ id, navigate }) {
         onClick: () => navigate(''),
       }}
       actions={
-        on ? (
+        channel.status === 'new' && channel.guided ? null : on ? (
           <Button
             variant="secondary"
             isBusy={busy === 'switch'}
@@ -207,7 +208,19 @@ export default function ChannelDetail({ id, navigate }) {
                   </div>
                 </>
               )}
-              {(channel.status === 'off' || channel.status === 'new') && (
+              {channel.status === 'new' && channel.guided && (
+                <>
+                  <h2>{__('Almost there', 'agent-studio')}</h2>
+                  <p>
+                    {__(
+                      'Finish the steps below and the channel switches on by itself.',
+                      'agent-studio',
+                    )}
+                  </p>
+                </>
+              )}
+              {(channel.status === 'off' ||
+                (channel.status === 'new' && !channel.guided)) && (
                 <>
                   <h2>{__('Off', 'agent-studio')}</h2>
                   <p>
@@ -223,6 +236,12 @@ export default function ChannelDetail({ id, navigate }) {
               )}
             </CardBody>
           </Card>
+
+          {channel.guided &&
+            channel.followUp.length > 0 &&
+            !(on && channel.followUp.every((step) => step.done)) && (
+              <FollowUpSteps channel={channel} onChange={setChannel} />
+            )}
 
           {on && caps.receive && (
             <Card>
@@ -614,7 +633,9 @@ function EditModal({ channel, agents, onClose, onSaved }) {
   const [secrets, setSecrets] = useState({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const fields = channel.steps.flatMap((step) => step.fields);
+  const fields = channel.steps
+    .concat(channel.followUp || [])
+    .flatMap((step) => step.fields);
   const type = { capabilities: channel.capabilities };
 
   const save = () => {
