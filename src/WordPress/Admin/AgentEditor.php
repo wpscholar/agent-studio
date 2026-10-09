@@ -312,9 +312,9 @@ final class AgentEditor
             printf(
                 '<p>%s <a href="%s">%s</a> · <a href="%s">%s</a></p>',
                 esc_html__('No skills yet.', 'agent-studio'),
-                esc_url(admin_url('post-new.php?post_type=' . PostTypes::SKILL)),
+                esc_url(Urls::skill('new')),
                 esc_html__('Add a skill', 'agent-studio'),
-                esc_url(Urls::importSkill()),
+                esc_url(Urls::skill('import')),
                 esc_html__('Import a SKILL.md', 'agent-studio')
             );
 

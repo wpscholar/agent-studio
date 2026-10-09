@@ -19,7 +19,7 @@ final class PostNotes
 
     public function addMetaBox(string $postType, mixed $post): void
     {
-        if (! $post instanceof WP_Post || in_array($postType, [PostTypes::AGENT, PostTypes::SKILL], true)) {
+        if (! $post instanceof WP_Post || in_array($postType, [PostTypes::AGENT, PostTypes::KNOWLEDGE], true)) {
             return;
         }
 

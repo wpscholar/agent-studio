@@ -78,7 +78,7 @@ final class AgentConfigMapper
     /**
      * @param array<string, mixed> $config
      */
-    public static function toAgent(int $id, string $name, string $instructions, array $config): Agent
+    public static function toAgent(int $id, string $name, string $instructions, array $config, int $ownerId = 0): Agent
     {
         $config = self::normalize($config);
 
@@ -104,7 +104,8 @@ final class AgentConfigMapper
             $config['max_runs_per_hour'],
             $config['model'],
             $config['webhook_secret'],
-            $config['provider']
+            $config['provider'],
+            $ownerId
         );
     }
 

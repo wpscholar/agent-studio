@@ -7,13 +7,16 @@ namespace AgentStudio\WordPress;
 use AgentStudio\Infrastructure\PostTypes;
 
 /**
- * Registers the agent and skill content types.
+ * Registers the agent and knowledge content types.
  *
- * Both are private: they have an admin screen and no front end. Everything
- * requires the manage capability, which is administrators by default.
+ * Both are private: no front end. Everything requires the manage capability,
+ * which administrators have by default.
  */
 final class PostTypeRegistrar
 {
+    private const MIGRATION_OPTION = 'agent_studio_content_version';
+    private const MIGRATION_VERSION = '2';
+
     public function register(): void
     {
         add_action('init', [$this, 'registerPostTypes']);
@@ -53,57 +56,105 @@ final class PostTypeRegistrar
                 'query_var' => false,
                 'can_export' => true,
                 'capabilities' => $this->capabilities(),
-                // Never turn this on: with these capabilities it would make "manage_options"
+                // Never turn this on: with these capabilities it would make the manage capability
                 // behave like a per-post capability for every check on the site.
                 'map_meta_cap' => false,
             ]
         );
 
         register_post_type(
-            PostTypes::SKILL,
+            PostTypes::KNOWLEDGE,
             [
                 'labels' => [
-                    'name' => __('Skills', 'agent-studio'),
-                    'singular_name' => __('Skill', 'agent-studio'),
-                    'menu_name' => __('Skills', 'agent-studio'),
-                    'add_new' => __('Add New', 'agent-studio'),
-                    'add_new_item' => __('Add New Skill', 'agent-studio'),
-                    'edit_item' => __('Edit Skill', 'agent-studio'),
-                    'new_item' => __('New Skill', 'agent-studio'),
-                    'view_item' => __('View Skill', 'agent-studio'),
-                    'search_items' => __('Search Skills', 'agent-studio'),
-                    'not_found' => __('No skills yet.', 'agent-studio'),
-                    'not_found_in_trash' => __('No skills in the Trash.', 'agent-studio'),
-                    'all_items' => __('Skills', 'agent-studio'),
+                    'name' => __('Knowledge', 'agent-studio'),
+                    'singular_name' => __('Knowledge item', 'agent-studio'),
                 ],
-                'description' => __('Reusable instructions that agents can load when they need them.', 'agent-studio'),
+                'description' => __('Skills and other things agents can know. Managed on the Agents → Skills screen.', 'agent-studio'),
                 'public' => false,
-                'show_ui' => true,
-                'show_in_menu' => 'edit.php?post_type=' . PostTypes::AGENT,
+                // Skills have their own screen; the stock post screens would show "Excerpt" where people expect "When to use".
+                'show_ui' => false,
                 'show_in_rest' => false,
-                'supports' => ['title', 'editor', 'excerpt', 'revisions'],
+                'supports' => ['title', 'editor', 'excerpt', 'revisions', 'author'],
+                'taxonomies' => [PostTypes::KNOWLEDGE_TYPE],
                 'has_archive' => false,
                 'rewrite' => false,
                 'query_var' => false,
                 'can_export' => true,
                 'capabilities' => $this->capabilities(),
-                // Never turn this on: with these capabilities it would make "manage_options"
+                // Never turn this on: with these capabilities it would make the manage capability
                 // behave like a per-post capability for every check on the site.
                 'map_meta_cap' => false,
             ]
         );
+
+        register_taxonomy(
+            PostTypes::KNOWLEDGE_TYPE,
+            [PostTypes::KNOWLEDGE],
+            [
+                'labels' => [
+                    'name' => __('Knowledge types', 'agent-studio'),
+                    'singular_name' => __('Knowledge type', 'agent-studio'),
+                ],
+                'public' => false,
+                'show_ui' => false,
+                'show_in_rest' => false,
+                'hierarchical' => false,
+                'rewrite' => false,
+                'query_var' => false,
+                'capabilities' => [
+                    'manage_terms' => Capabilities::manage(),
+                    'edit_terms' => Capabilities::manage(),
+                    'delete_terms' => Capabilities::manage(),
+                    'assign_terms' => Capabilities::manage(),
+                ],
+            ]
+        );
+
+        $this->migrateLegacySkills();
     }
 
     /**
-     * Agents and skills are plain text, so the classic editor is the right tool.
+     * Skills used to be their own post type. Moves them into knowledge, typed "skill".
+     * Revisions follow their parent, so history is kept.
+     */
+    public function migrateLegacySkills(): void
+    {
+        if (get_option(self::MIGRATION_OPTION) === self::MIGRATION_VERSION) {
+            return;
+        }
+
+        $ids = get_posts(
+            [
+                'post_type' => PostTypes::LEGACY_SKILL,
+                'post_status' => 'any',
+                'numberposts' => -1,
+                'fields' => 'ids',
+                'suppress_filters' => true,
+            ]
+        );
+
+        global $wpdb;
+
+        foreach ($ids as $id) {
+            // Like set_post_type(), without touching anything else on the post.
+            $wpdb->update($wpdb->posts, ['post_type' => PostTypes::KNOWLEDGE], ['ID' => (int) $id]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            clean_post_cache((int) $id);
+            wp_set_object_terms((int) $id, PostTypes::TYPE_SKILL, PostTypes::KNOWLEDGE_TYPE);
+        }
+
+        update_option(self::MIGRATION_OPTION, self::MIGRATION_VERSION, false);
+    }
+
+    /**
+     * Agent instructions are plain text, so the classic editor is the right tool.
      */
     public function useClassicEditor(bool $useBlockEditor, string $postType): bool
     {
-        return in_array($postType, [PostTypes::AGENT, PostTypes::SKILL], true) ? false : $useBlockEditor;
+        return $postType === PostTypes::AGENT ? false : $useBlockEditor;
     }
 
     /**
-     * Agents and skills have no draft workflow. Saving them saves them.
+     * Agents and knowledge have no draft workflow. Saving them saves them.
      *
      * @param array<string, mixed> $data
      *
@@ -111,7 +162,7 @@ final class PostTypeRegistrar
      */
     public function keepPublished(array $data): array
     {
-        $isOurs = in_array($data['post_type'] ?? '', [PostTypes::AGENT, PostTypes::SKILL], true);
+        $isOurs = in_array($data['post_type'] ?? '', [PostTypes::AGENT, PostTypes::KNOWLEDGE], true);
         if ($isOurs && in_array($data['post_status'] ?? '', ['draft', 'pending'], true)) {
             $data['post_status'] = 'publish';
         }

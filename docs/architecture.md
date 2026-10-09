@@ -47,4 +47,6 @@ See the canonical references above for examples and patterns (Command/Handler, R
 
 Gutenberg is experimenting with a `wp_knowledge` post type, typed by a `wp_knowledge_type` taxonomy (guideline, memory, note), for content AI features read ([gutenberg#77230](https://github.com/WordPress/gutenberg/issues/77230)). It is not in core, and as of October 2026 it is not planned for the near term, so Agent Studio never depends on it and does not read site guidelines.
 
-- Skills already have the shape core plans for knowledge documents (title, excerpt as the description, content as the body, revisions). If core ships a `skill` type, it can become another `SkillRepository` adapter.
+- Agent Studio stores what agents know the same way: post type `agent_studio_kb` (title, excerpt as the description, content, author, revisions) typed by the `agent_studio_kb_type` taxonomy. Skills are the `skill` type today; memories and notes would be further types. Post type keys are limited to 20 characters, hence `kb`.
+- `WordPressSkillRepository` reads only the `skill` type. If core ships Knowledge, a second `SkillRepository` adapter can read it instead.
+- The stock post screens are hidden for knowledge (`show_ui` false). People use Agents → Skills, which explains the fields in plain language.

@@ -44,7 +44,6 @@ use AgentStudio\WordPress\Abilities\StarterAbilities;
 use AgentStudio\WordPress\Admin\AbilitiesPage;
 use AgentStudio\WordPress\Admin\AgentEditor;
 use AgentStudio\WordPress\Admin\Assets;
-use AgentStudio\WordPress\Admin\ImportSkillPage;
 use AgentStudio\WordPress\Admin\Menu;
 use AgentStudio\WordPress\Admin\PostNotes;
 use AgentStudio\WordPress\Admin\RunsPage;
@@ -54,6 +53,7 @@ use AgentStudio\WordPress\Hooks\ScheduleHooks;
 use AgentStudio\WordPress\Hooks\TriggerHooks;
 use AgentStudio\WordPress\Hooks\WorkerHooks;
 use AgentStudio\WordPress\Rest\AgentsController;
+use AgentStudio\WordPress\Rest\SkillsController;
 use AgentStudio\WordPress\Rest\WebhookController;
 
 /**
@@ -69,12 +69,15 @@ final class Plugin
 
         Schema::upgradeIfNeeded();
 
+        // First: everything below checks these capabilities.
+        $container->get(Capabilities::class)->register();
         $container->get(PostTypeRegistrar::class)->register();
         $container->get(TriggerHooks::class)->register();
         $container->get(WorkerHooks::class)->register();
         $container->get(ScheduleHooks::class)->register();
         $container->get(WebhookController::class)->register();
         $container->get(AgentsController::class)->register();
+        $container->get(SkillsController::class)->register();
         $container->get(AgentAbilities::class)->register();
         $container->get(StarterAbilities::class)->register();
 
@@ -83,7 +86,6 @@ final class Plugin
             $container->get(Menu::class)->register();
             $container->get(AgentEditor::class)->register();
             $container->get(RunsPage::class)->register();
-            $container->get(ImportSkillPage::class)->register();
             $container->get(TemplatesPage::class)->register();
             $container->get(PostNotes::class)->register();
         }
@@ -138,7 +140,8 @@ final class Plugin
         $c->set(JobQueue::class, static fn (): JobQueue => new WordPressJobQueue());
         $c->set(RecursionGuard::class, static fn (): RecursionGuard => new ProcessRecursionGuard());
         $c->set(AgentRepository::class, static fn (): AgentRepository => new WordPressAgentRepository());
-        $c->set(SkillRepository::class, static fn (): SkillRepository => new WordPressSkillRepository());
+        $c->set(WordPressSkillRepository::class, static fn (): WordPressSkillRepository => new WordPressSkillRepository());
+        $c->set(SkillRepository::class, static fn (Container $c): SkillRepository => $c->get(WordPressSkillRepository::class));
         $c->set(RunRepository::class, static fn (): RunRepository => new WpdbRunRepository());
         $c->set(AbilityGateway::class, static fn (): AbilityGateway => new AbilitiesApiGateway());
         $c->set(ScheduleState::class, static fn (): ScheduleState => new OptionScheduleState());
@@ -281,6 +284,14 @@ final class Plugin
             )
         );
         $c->set(
+            SkillsController::class,
+            static fn (Container $c): SkillsController => new SkillsController(
+                $c->get(WordPressSkillRepository::class),
+                $c->get(AgentRepository::class)
+            )
+        );
+        $c->set(Capabilities::class, static fn (): Capabilities => new Capabilities());
+        $c->set(
             AgentAbilities::class,
             static fn (Container $c): AgentAbilities => new AgentAbilities(
                 $c->get(AgentRepository::class),
@@ -294,10 +305,6 @@ final class Plugin
         $c->set(Assets::class, static fn (): Assets => new Assets());
         $c->set(PostNotes::class, static fn (): PostNotes => new PostNotes());
         $c->set(TemplatesPage::class, static fn (): TemplatesPage => new TemplatesPage());
-        $c->set(
-            ImportSkillPage::class,
-            static fn (Container $c): ImportSkillPage => new ImportSkillPage($c->get(SkillRepository::class))
-        );
         $c->set(
             AbilitiesPage::class,
             static fn (Container $c): AbilitiesPage => new AbilitiesPage($c->get(AbilityGateway::class))
@@ -316,8 +323,7 @@ final class Plugin
             static fn (Container $c): Menu => new Menu(
                 $c->get(RunsPage::class),
                 $c->get(AbilitiesPage::class),
-                $c->get(TemplatesPage::class),
-                $c->get(ImportSkillPage::class)
+                $c->get(TemplatesPage::class)
             )
         );
         $c->set(

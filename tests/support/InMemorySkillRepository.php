@@ -26,4 +26,9 @@ final class InMemorySkillRepository implements SkillRepository
     {
         $this->skills[$skill->slug] = $skill;
     }
+
+    public function delete(string $slug): void
+    {
+        unset($this->skills[$slug]);
+    }
 }

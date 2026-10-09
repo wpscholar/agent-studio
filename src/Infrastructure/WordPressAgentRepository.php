@@ -63,7 +63,8 @@ final class WordPressAgentRepository implements AgentRepository
             $post->ID,
             $post->post_title !== '' ? $post->post_title : sprintf('Agent #%d', $post->ID),
             $post->post_content,
-            AgentConfigMapper::read($post->ID)
+            AgentConfigMapper::read($post->ID),
+            (int) $post->post_author
         );
     }
 }

@@ -137,7 +137,7 @@ final class TriggerHooks
          */
         $ignored = (array) apply_filters(
             'agent_studio_ignored_post_types',
-            ['revision', 'nav_menu_item', 'customize_changeset', 'oembed_cache', 'user_request', PostTypes::AGENT, PostTypes::SKILL]
+            ['revision', 'nav_menu_item', 'customize_changeset', 'oembed_cache', 'user_request', PostTypes::AGENT, PostTypes::KNOWLEDGE]
         );
 
         return in_array($postType, $ignored, true);
