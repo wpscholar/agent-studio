@@ -19,4 +19,9 @@ interface SkillRepository
      * Creates the skill or replaces the one with the same slug.
      */
     public function save(Skill $skill): void;
+
+    /**
+     * Removes the skill. Agents that listed it simply stop seeing it.
+     */
+    public function delete(string $slug): void;
 }

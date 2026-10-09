@@ -38,9 +38,17 @@ final class Urls
         return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-templates');
     }
 
-    public static function importSkill(): string
+    public static function skills(): string
     {
-        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-import-skill');
+        return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-skills');
+    }
+
+    /**
+     * @param string $view "new", "import", or a skill slug to open it.
+     */
+    public static function skill(string $view): string
+    {
+        return add_query_arg('skill', rawurlencode($view), self::skills());
     }
 
     public static function webhook(int $agentId): string

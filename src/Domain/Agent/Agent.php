@@ -21,6 +21,7 @@ final class Agent
      * @param list<string>  $abilities  Allowlist of ability names the agent may call.
      * @param list<string>  $skills     Allowlist of skill slugs the agent may load.
      * @param string        $provider   AI provider ID for $model. Both empty means WordPress picks.
+     * @param int           $ownerId    The person who set the agent up. They can approve its actions.
      */
     public function __construct(
         public readonly int $id,
@@ -37,6 +38,7 @@ final class Agent
         public readonly string $model = '',
         public readonly string $webhookSecret = '',
         public readonly string $provider = '',
+        public readonly int $ownerId = 0,
     ) {
         $this->maxSteps = max(self::MIN_STEPS, min(self::MAX_STEPS, $maxSteps));
         $this->maxRunsPerHour = max(1, min(self::MAX_RUNS_PER_HOUR_LIMIT, $maxRunsPerHour));

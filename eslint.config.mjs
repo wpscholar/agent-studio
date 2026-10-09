@@ -26,11 +26,33 @@ export default [
 		],
 	},
 	{
-		files: ['assets/**/*.js'],
+		files: ['assets/*.js'],
 		languageOptions: {
 			ecmaVersion: 2022,
 			sourceType: 'script',
 			globals: browser,
+		},
+		rules: { 'no-unused-vars': 'error', 'no-undef': 'error', eqeqeq: 'error' },
+	},
+	{
+		// The admin app: ES modules with JSX, built by Vite against WordPress's own React.
+		files: ['assets/src/**/*.{js,jsx}'],
+		languageOptions: {
+			ecmaVersion: 2022,
+			sourceType: 'module',
+			parserOptions: { ecmaFeatures: { jsx: true } },
+			globals: {
+				...browser,
+				Blob: 'readonly',
+				URL: 'readonly',
+				URLSearchParams: 'readonly',
+				FileReader: 'readonly',
+				clearTimeout: 'readonly',
+				Intl: 'readonly',
+				history: 'readonly',
+				location: 'readonly',
+				confirm: 'readonly',
+			},
 		},
 		rules: { 'no-unused-vars': 'error', 'no-undef': 'error', eqeqeq: 'error' },
 	},

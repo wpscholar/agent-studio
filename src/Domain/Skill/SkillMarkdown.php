@@ -7,7 +7,7 @@ namespace AgentStudio\Domain\Skill;
 use InvalidArgumentException;
 
 /**
- * Parses a SKILL.md file (YAML front matter with name and description, then Markdown).
+ * Reads and writes SKILL.md files (YAML front matter with name and description, then Markdown).
  */
 final class SkillMarkdown
 {
@@ -44,6 +44,18 @@ final class SkillMarkdown
         }
 
         return new Skill(self::slugify($slugSource), $name, $description, $body);
+    }
+
+    /**
+     * The skill as a SKILL.md file that parse() reads back unchanged.
+     */
+    public static function render(Skill $skill): string
+    {
+        return "---\n"
+            . 'name: ' . self::quote($skill->name) . "\n"
+            . 'description: ' . self::quote($skill->description) . "\n"
+            . "---\n\n"
+            . rtrim($skill->body) . "\n";
     }
 
     public static function slugify(string $value): string
@@ -84,12 +96,25 @@ final class SkillMarkdown
         return $values;
     }
 
+    /**
+     * Double-quotes a one-line value so colons, quotes and leading symbols survive.
+     */
+    private static function quote(string $value): string
+    {
+        $value = trim((string) preg_replace('/\s+/', ' ', $value));
+
+        return '"' . str_replace(['\\', '"'], ['\\\\', '\\"'], $value) . '"';
+    }
+
     private static function unquote(string $value): string
     {
         if (strlen($value) >= 2) {
             $first = $value[0];
-            if (($first === '"' || $first === "'") && substr($value, -1) === $first) {
-                return substr($value, 1, -1);
+            if ($first === '"' && substr($value, -1) === '"') {
+                return (string) preg_replace('/\\\\(["\\\\])/', '$1', substr($value, 1, -1));
+            }
+            if ($first === "'" && substr($value, -1) === "'") {
+                return str_replace("''", "'", substr($value, 1, -1));
             }
         }
 

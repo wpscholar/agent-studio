@@ -6,7 +6,6 @@ namespace AgentStudio\Tests\Integration;
 
 use AgentStudio\Infrastructure\AgentConfigMapper;
 use AgentStudio\WordPress\Admin\AgentEditor;
-use AgentStudio\WordPress\Admin\ImportSkillPage;
 use AgentStudio\WordPress\Admin\RunsPage;
 use AgentStudio\WordPress\Admin\TemplatesPage;
 use AgentStudio\WordPress\Plugin;
@@ -168,18 +167,6 @@ final class AdminTest extends IntegrationTestCase
         $created = array_values(array_filter($agents, static fn ($a): bool => $a->name === 'Pre-publish reviewer'));
         $this->assertCount(1, $created);
         $this->assertFalse($created[0]->isActive());
-    }
-
-    public function test_importing_a_skill_from_markdown(): void
-    {
-        $markdown = "---\nname: Release notes writer\ndescription: Turns changes into friendly notes.\n---\n\nWrite in plain language.";
-        $_POST = $_REQUEST = ['skill_markdown' => wp_slash($markdown), '_wpnonce' => wp_create_nonce('agent_studio_import_skill')];
-
-        $this->redirectOf(static fn () => Plugin::container()->get(ImportSkillPage::class)->import());
-
-        $skill = (new \AgentStudio\Infrastructure\WordPressSkillRepository())->findBySlug('release-notes-writer');
-        $this->assertNotNull($skill);
-        $this->assertSame('Turns changes into friendly notes.', $skill->description);
     }
 
     public function test_the_runs_page_escapes_what_came_from_outside(): void
