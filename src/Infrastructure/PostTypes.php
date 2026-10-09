@@ -32,6 +32,12 @@ final class PostTypes
     /** Post meta holding a connection's settings, status and tools as JSON. Never secrets. */
     public const CONNECTION_META = '_agent_studio_connection';
 
+    /** Channels: places people talk to agents, or get notifications. */
+    public const CHANNEL = 'agent_studio_chan';
+
+    /** Post meta holding a channel's settings and state as JSON. Never secrets. */
+    public const CHANNEL_META = '_agent_studio_channel';
+
     /** Post meta holding an agent's configuration as JSON. */
     public const AGENT_CONFIG_META = '_agent_studio_config';
 

@@ -134,6 +134,29 @@ final class PostTypeRegistrar
             ]
         );
 
+        register_post_type(
+            PostTypes::CHANNEL,
+            [
+                'labels' => [
+                    'name' => __('Channels', 'agent-studio'),
+                    'singular_name' => __('Channel', 'agent-studio'),
+                ],
+                'description' => __('Places people talk to agents, or get notifications. Managed on the Agents → Channels screen.', 'agent-studio'),
+                'public' => false,
+                'show_ui' => false,
+                'show_in_rest' => false,
+                'supports' => ['title', 'author'],
+                'has_archive' => false,
+                'rewrite' => false,
+                'query_var' => false,
+                'can_export' => false,
+                'capabilities' => $this->capabilities(),
+                // Never turn this on: with these capabilities it would make the manage capability
+                // behave like a per-post capability for every check on the site.
+                'map_meta_cap' => false,
+            ]
+        );
+
         $this->migrateLegacySkills();
     }
 

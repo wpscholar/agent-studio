@@ -38,7 +38,12 @@ final class RunsPage
     public function resolveApproval(): void
     {
         $runId = isset($_POST['run_id']) ? absint(wp_unslash($_POST['run_id'])) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- authorize() checks the nonce.
-        $this->authorize('agent_studio_run_' . $runId);
+        $run = $this->runs->find($runId);
+        $agent = $run === null ? null : $this->agents->find($run->agentId());
+        if (! Capabilities::canApprove($agent, get_current_user_id())) {
+            wp_die(esc_html__('You are not allowed to approve this agent’s actions.', 'agent-studio'), '', ['response' => 403]);
+        }
+        check_admin_referer('agent_studio_run_' . $runId);
 
         $approve = isset($_POST['decision']) && sanitize_key(wp_unslash($_POST['decision'])) === 'approve'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- authorize() checks the nonce.
         $done = $this->approvals->handle($runId, $approve, get_current_user_id());
@@ -213,12 +218,17 @@ final class RunsPage
                 esc_html(Labels::risk($pending->risk))
             );
             echo '<pre class="agent-studio-json">' . esc_html($this->json($pending->input)) . '</pre>';
-            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="agent-studio-inline-form">';
-            wp_nonce_field('agent_studio_run_' . $id);
-            echo '<input type="hidden" name="action" value="agent_studio_resolve_approval"><input type="hidden" name="run_id" value="' . esc_attr((string) $id) . '">';
-            echo '<button class="button button-primary" name="decision" value="approve">' . esc_html__('Approve', 'agent-studio') . '</button> ';
-            echo '<button class="button" name="decision" value="reject">' . esc_html__('Reject', 'agent-studio') . '</button>';
-            echo '</form></div>';
+            if (Capabilities::canApprove($agent, get_current_user_id())) {
+                echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="agent-studio-inline-form">';
+                wp_nonce_field('agent_studio_run_' . $id);
+                echo '<input type="hidden" name="action" value="agent_studio_resolve_approval"><input type="hidden" name="run_id" value="' . esc_attr((string) $id) . '">';
+                echo '<button class="button button-primary" name="decision" value="approve">' . esc_html__('Approve', 'agent-studio') . '</button> ';
+                echo '<button class="button" name="decision" value="reject">' . esc_html__('Reject', 'agent-studio') . '</button>';
+                echo '</form>';
+            } else {
+                echo '<p>' . esc_html__('Only administrators and the person who set up this agent can approve this.', 'agent-studio') . '</p>';
+            }
+            echo '</div>';
         }
 
         if ($run->status() === RunStatus::Queued || $run->status() === RunStatus::AwaitingApproval) {

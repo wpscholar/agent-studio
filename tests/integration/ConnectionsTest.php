@@ -196,7 +196,7 @@ final class ConnectionsTest extends IntegrationTestCase
 
         $this->call('DELETE', 'connections/' . $connection['id']);
 
-        $this->assertSame([], EncryptedOptionSecretStore::names());
+        $this->assertSame([], array_values(array_filter(EncryptedOptionSecretStore::names(), static fn (string $n): bool => str_starts_with($n, 'connection-'))));
         $this->assertSame(404, $this->call('GET', 'connections/' . $connection['id'])->get_status());
     }
 

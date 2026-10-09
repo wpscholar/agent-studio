@@ -57,6 +57,7 @@ final class Labels
             TriggerType::Schedule => __('Schedule', 'agent-studio'),
             TriggerType::Webhook => __('Webhook', 'agent-studio'),
             TriggerType::Manual => __('Manual', 'agent-studio'),
+            TriggerType::Message => __('Message', 'agent-studio'),
         };
     }
 

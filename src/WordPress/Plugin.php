@@ -5,6 +5,28 @@ declare(strict_types=1);
 namespace AgentStudio\WordPress;
 
 use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Approval\ApprovalTokens;
+use AgentStudio\Application\Channels\ChannelNotifier;
+use AgentStudio\Application\Channels\ChannelService;
+use AgentStudio\Application\Channels\ChannelTypes;
+use AgentStudio\Application\Channels\ConversationReplies;
+use AgentStudio\Application\Channels\InboundHandler;
+use AgentStudio\Application\CompositeNotifier;
+use AgentStudio\Application\Conversations\ConversationService;
+use AgentStudio\Contracts\ApprovalPolicy;
+use AgentStudio\Contracts\Channel\ChannelEndpoints;
+use AgentStudio\Contracts\Channel\ChannelPhrases as ChannelPhrasesContract;
+use AgentStudio\Contracts\ChannelRepository;
+use AgentStudio\Contracts\ContactRepository;
+use AgentStudio\Contracts\ConversationRepository;
+use AgentStudio\Infrastructure\WordPressChannelRepository;
+use AgentStudio\Infrastructure\WpdbContactRepository;
+use AgentStudio\Infrastructure\WpdbConversationRepository;
+use AgentStudio\WordPress\Channels\ChannelPhrases;
+use AgentStudio\WordPress\Channels\NtfyChannelType;
+use AgentStudio\WordPress\Channels\TelegramChannelType;
+use AgentStudio\WordPress\Channels\WordPressChannelEndpoints;
+use AgentStudio\WordPress\Rest\ChannelsController;
 use AgentStudio\Application\Connections\ConnectionAbilityGateway;
 use AgentStudio\Application\Connections\ConnectionService;
 use AgentStudio\Application\Connections\ConnectionTypes;
@@ -97,6 +119,7 @@ final class Plugin
         $container->get(AgentsController::class)->register();
         $container->get(SkillsController::class)->register();
         $container->get(ConnectionsController::class)->register();
+        $container->get(ChannelsController::class)->register();
         $container->get(ConnectionHooks::class)->register();
         $container->get(AgentAbilities::class)->register();
         $container->get(StarterAbilities::class)->register();
@@ -157,7 +180,126 @@ final class Plugin
 
         $c->set(Clock::class, static fn (): Clock => new SystemClock());
         $c->set(Identity::class, static fn (): Identity => new WordPressIdentity());
-        $c->set(Notifier::class, static fn (): Notifier => new WordPressNotifier());
+        $c->set(
+            Notifier::class,
+            static fn (Container $c): Notifier => new CompositeNotifier([new WordPressNotifier(), $c->get(ChannelNotifier::class)])
+        );
+        $c->set(ChannelRepository::class, static fn (): ChannelRepository => new WordPressChannelRepository());
+        $c->set(ContactRepository::class, static fn (): ContactRepository => new WpdbContactRepository());
+        $c->set(ConversationRepository::class, static fn (): ConversationRepository => new WpdbConversationRepository());
+        $c->set(ApprovalPolicy::class, static fn (): ApprovalPolicy => new WordPressApprovalPolicy());
+        $c->set(ChannelPhrasesContract::class, static fn (): ChannelPhrasesContract => new ChannelPhrases());
+        $c->set(ChannelEndpoints::class, static fn (): ChannelEndpoints => new WordPressChannelEndpoints());
+        $c->set(
+            ApprovalTokens::class,
+            static function (Container $c): ApprovalTokens {
+                $secrets = $c->get(SecretStore::class);
+                $key = $secrets->get('approval-signing-key');
+                if ($key === null) {
+                    $key = bin2hex(random_bytes(32));
+                    $secrets->set('approval-signing-key', $key);
+                }
+
+                return new ApprovalTokens($key);
+            }
+        );
+        $c->set(
+            ChannelTypes::class,
+            static function (Container $c): ChannelTypes {
+                $types = new ChannelTypes();
+                $types->register(new TelegramChannelType($c->get(HttpClient::class)));
+                $types->register(new NtfyChannelType($c->get(HttpClient::class)));
+
+                /**
+                 * Fires when the kinds of channel are collected. Register your own with
+                 * $types->register( new My_Channel_Type() ); it then appears on the
+                 * Channels screen with its setup steps.
+                 *
+                 * @param ChannelTypes $types The registry.
+                 */
+                do_action('agent_studio_register_channel_types', $types);
+
+                return $types;
+            }
+        );
+        $c->set(
+            ChannelService::class,
+            static fn (Container $c): ChannelService => new ChannelService(
+                $c->get(ChannelRepository::class),
+                $c->get(ChannelTypes::class),
+                $c->get(SecretStore::class),
+                $c->get(ContactRepository::class),
+                $c->get(ConversationRepository::class),
+                $c->get(PendingSignInStore::class),
+                $c->get(ChannelEndpoints::class)
+            )
+        );
+        $c->set(
+            ConversationService::class,
+            static fn (Container $c): ConversationService => new ConversationService(
+                $c->get(ConversationRepository::class),
+                $c->get(ModelClient::class),
+                $c->get(Clock::class)
+            )
+        );
+        $c->set(
+            ChannelNotifier::class,
+            static fn (Container $c): ChannelNotifier => new ChannelNotifier(
+                $c->get(ChannelRepository::class),
+                $c->get(ChannelService::class),
+                $c->get(ConversationService::class),
+                $c->get(ApprovalPolicy::class),
+                $c->get(ApprovalTokens::class),
+                $c->get(ChannelEndpoints::class),
+                $c->get(ChannelPhrasesContract::class)
+            )
+        );
+        $c->set(
+            ConversationReplies::class,
+            static fn (Container $c): ConversationReplies => new ConversationReplies(
+                $c->get(ConversationService::class),
+                $c->get(ChannelService::class),
+                $c->get(ChannelRepository::class),
+                $c->get(ContactRepository::class),
+                $c->get(AgentRepository::class),
+                $c->get(ApprovalPolicy::class),
+                $c->get(ApprovalTokens::class),
+                $c->get(ChannelPhrasesContract::class)
+            )
+        );
+        $c->set(
+            InboundHandler::class,
+            static fn (Container $c): InboundHandler => new InboundHandler(
+                $c->get(ChannelService::class),
+                $c->get(ChannelRepository::class),
+                $c->get(ContactRepository::class),
+                $c->get(ConversationService::class),
+                $c->get(AgentRepository::class),
+                $c->get(DispatchTriggerHandler::class),
+                $c->get(RunRepository::class),
+                $c->get(ResolveApprovalHandler::class),
+                $c->get(ApprovalTokens::class),
+                $c->get(ApprovalPolicy::class),
+                $c->get(ChannelPhrasesContract::class),
+                $c->get(Clock::class)
+            )
+        );
+        $c->set(
+            ChannelsController::class,
+            static fn (Container $c): ChannelsController => new ChannelsController(
+                $c->get(ChannelRepository::class),
+                $c->get(ChannelService::class),
+                $c->get(ChannelTypes::class),
+                $c->get(ContactRepository::class),
+                $c->get(AgentRepository::class),
+                $c->get(InboundHandler::class),
+                $c->get(RunRepository::class),
+                $c->get(ResolveApprovalHandler::class),
+                $c->get(ApprovalTokens::class),
+                $c->get(ApprovalPolicy::class),
+                $c->get(ChannelPhrasesContract::class)
+            )
+        );
         $c->set(Settings::class, static fn (): Settings => new WordPressSettings());
         $c->set(JobQueue::class, static fn (): JobQueue => new WordPressJobQueue());
         $c->set(RecursionGuard::class, static fn (): RecursionGuard => new ProcessRecursionGuard());
@@ -298,7 +440,9 @@ final class Plugin
                 $c->get(Notifier::class),
                 $c->get(Identity::class),
                 $c->get(RecursionGuard::class),
-                $c->get(Clock::class)
+                $c->get(Clock::class),
+                $c->get(ConversationService::class),
+                $c->get(ConversationReplies::class)
             )
         );
 

@@ -20,6 +20,7 @@ use AgentStudio\WordPress\Capabilities;
 /**
  * Direct calls for people and scripts that are logged in (cookie + nonce, or an application password).
  *
+ *   GET  /wp-json/agent-studio/v1/agents            List agents (id, name, active).
  *   POST /wp-json/agent-studio/v1/agents/{id}/run   Start an agent now. Body: {"payload": {...}}
  *   GET  /wp-json/agent-studio/v1/runs/{id}         Check on a run.
  */
@@ -41,6 +42,16 @@ final class AgentsController
     {
         register_rest_route(
             'agent-studio/v1',
+            '/agents',
+            [
+                'methods' => 'GET',
+                'callback' => [$this, 'index'],
+                'permission_callback' => [Capabilities::class, 'canManage'],
+            ]
+        );
+
+        register_rest_route(
+            'agent-studio/v1',
             '/agents/(?P<id>\d+)/run',
             [
                 'methods' => 'POST',
@@ -58,6 +69,16 @@ final class AgentsController
                 'permission_callback' => [Capabilities::class, 'canManage'],
             ]
         );
+    }
+
+    public function index(): WP_REST_Response
+    {
+        $agents = [];
+        foreach ($this->agents->all() as $agent) {
+            $agents[] = ['id' => $agent->id, 'name' => $agent->name, 'active' => $agent->isActive()];
+        }
+
+        return new WP_REST_Response($agents);
     }
 
     /**

@@ -16,7 +16,10 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 global $wpdb;
 
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'agent_studio_runs');
+foreach (['agent_studio_runs', 'agent_studio_conversations', 'agent_studio_messages', 'agent_studio_contacts'] as $agent_studio_table) {
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . $agent_studio_table);
+}
 
 delete_option('agent_studio_db_version');
 delete_option('agent_studio_settings');
@@ -45,7 +48,7 @@ delete_option('agent_studio_secret_index');
 if (defined('AGENT_STUDIO_REMOVE_ALL_DATA') && AGENT_STUDIO_REMOVE_ALL_DATA === true) {
     $posts = get_posts(
         [
-            'post_type' => ['agent_studio_agent', 'agent_studio_kb', 'agent_studio_skill', 'agent_studio_conn'],
+            'post_type' => ['agent_studio_agent', 'agent_studio_kb', 'agent_studio_skill', 'agent_studio_conn', 'agent_studio_chan'],
             'post_status' => 'any',
             'numberposts' => -1,
             'fields' => 'ids',
