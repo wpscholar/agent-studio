@@ -1,57 +1,64 @@
-.wpa-hint {
+.agent-studio-hint {
   margin: 12px 0 4px;
   color: #50575e;
 }
-.wpa-triggers {
+.agent-studio-triggers {
   display: grid;
   gap: 8px;
 }
-.wpa-trigger {
+.agent-studio-trigger {
   border: 1px solid #dcdcde;
   border-radius: 4px;
   padding: 10px 12px;
   background: #fff;
 }
-.wpa-trigger.is-on {
+.agent-studio-trigger.is-on {
   border-color: #2271b1;
   box-shadow: 0 0 0 1px #2271b1;
 }
-.wpa-trigger .description {
+.agent-studio-trigger .description {
   margin: 2px 0 0 24px;
 }
-.wpa-trigger__fields {
+.agent-studio-trigger__fields {
   display: none;
   margin: 8px 0 0 24px;
   gap: 8px;
 }
-.wpa-trigger.is-on .wpa-trigger__fields {
+.agent-studio-trigger.is-on .agent-studio-trigger__fields {
   display: grid;
 }
-.wpa-trigger__fields label {
+.agent-studio-trigger__fields label {
   display: grid;
   gap: 2px;
 }
-.wpa-abilities {
+.agent-studio-trigger__fields label[hidden] {
+  display: none;
+}
+.agent-studio-trigger__fields select,
+.agent-studio-trigger__fields input[type='time'] {
+  max-width: 16em;
+}
+.agent-studio-abilities {
   max-height: 320px;
   overflow: auto;
   border: 1px solid #dcdcde;
   padding: 4px 10px;
   background: #fff;
 }
-.wpa-ability,
-.wpa-skill {
+.agent-studio-ability,
+.agent-studio-skill {
   display: block;
   padding: 6px 0;
   border-bottom: 1px solid #f0f0f1;
 }
-.wpa-ability[hidden] {
+.agent-studio-ability[hidden] {
   display: none;
 }
-.wpa-ability--missing {
+.agent-studio-ability--missing {
   color: #996800;
 }
-.wpa-risk,
-.wpa-badge {
+.agent-studio-risk,
+.agent-studio-badge {
   display: inline-block;
   padding: 1px 8px;
   border-radius: 10px;
@@ -60,51 +67,51 @@
   background: #f0f0f1;
   color: #1d2327;
 }
-.wpa-risk--read {
+.agent-studio-risk--read {
   background: #e7f5ea;
   color: #0a5c1f;
 }
-.wpa-risk--write {
+.agent-studio-risk--write {
   background: #fcf3d6;
   color: #6b4c00;
 }
-.wpa-risk--destructive {
+.agent-studio-risk--destructive {
   background: #fbe4e4;
   color: #8a1f1f;
 }
-.wpa-risk--external {
+.agent-studio-risk--external {
   background: #e5f0fb;
   color: #124b80;
 }
-.wpa-badge--active,
-.wpa-badge--completed {
+.agent-studio-badge--active,
+.agent-studio-badge--completed {
   background: #e7f5ea;
   color: #0a5c1f;
 }
-.wpa-badge--failed {
+.agent-studio-badge--failed {
   background: #fbe4e4;
   color: #8a1f1f;
 }
-.wpa-badge--awaiting_approval {
+.agent-studio-badge--awaiting_approval {
   background: #fcf3d6;
   color: #6b4c00;
 }
-.wpa-badge--running,
-.wpa-badge--queued {
+.agent-studio-badge--running,
+.agent-studio-badge--queued {
   background: #e5f0fb;
   color: #124b80;
 }
-.wpa-form th {
+.agent-studio-form th {
   width: 140px;
   padding-left: 0;
 }
-.wpa-run-status {
+.agent-studio-run-status {
   min-height: 1.4em;
 }
-.wpa-meta th {
+.agent-studio-meta th {
   width: 160px;
 }
-.wpa-json {
+.agent-studio-json {
   background: #f6f7f7;
   border: 1px solid #dcdcde;
   padding: 10px;
@@ -113,71 +120,71 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
-.wpa-output {
+.agent-studio-output {
   background: #fff;
   border: 1px solid #dcdcde;
   padding: 12px 16px;
   max-width: 800px;
 }
-.wpa-steps {
+.agent-studio-steps {
   max-width: 900px;
 }
-.wpa-steps li {
+.agent-studio-steps li {
   padding: 6px 0;
   border-bottom: 1px solid #f0f0f1;
 }
-.wpa-step-kind {
+.agent-studio-step-kind {
   font-weight: 600;
   margin-right: 6px;
 }
-.wpa-step-time {
+.agent-studio-step-time {
   color: #787c82;
   font-size: 12px;
 }
-.wpa-approval {
+.agent-studio-approval {
   padding: 4px 16px 12px;
   max-width: 800px;
 }
-.wpa-inline-form {
+.agent-studio-inline-form {
   margin: 12px 0;
 }
-.wpa-dot {
+.agent-studio-dot {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
   margin-right: 6px;
 }
-.wpa-dot--ok {
+.agent-studio-dot--ok {
   background: #00a32a;
 }
-.wpa-dot--bad {
+.agent-studio-dot--bad {
   background: #d63638;
 }
-.wpa-cards {
+.agent-studio-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
   max-width: 1000px;
 }
-.wpa-card {
+.agent-studio-card {
   background: #fff;
   border: 1px solid #dcdcde;
   border-radius: 4px;
   padding: 4px 18px 16px;
 }
-.wpa-note {
+.agent-studio-note {
   border-left: 3px solid #2271b1;
   padding: 4px 8px;
   margin: 8px 0;
   background: #f6f7f7;
 }
-.wpa-note__meta {
+.agent-studio-note__meta {
   color: #787c82;
   font-size: 11px;
 }
 @media (max-width: 782px) {
-  .wpa-trigger__fields {
+  .agent-studio-trigger__fields {
     margin-left: 0;
   }
 }

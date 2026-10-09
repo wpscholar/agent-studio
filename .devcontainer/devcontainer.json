@@ -6,8 +6,7 @@
   "remoteUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "customizations": {
     "vscode": {
@@ -25,10 +24,10 @@
       }
     }
   },
-  "forwardPorts": [80, 3306, 8025],
+  "forwardPorts": ["wordpress:80", "mailpit:8025"],
   "portsAttributes": {
-    "80": { "label": "WordPress", "visibility": "private" },
-    "8025": { "label": "Mailpit", "visibility": "private" }
+    "wordpress:80": { "label": "WordPress", "visibility": "private" },
+    "mailpit:8025": { "label": "Mailpit", "visibility": "private" }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   "shutdownAction": "stopCompose"

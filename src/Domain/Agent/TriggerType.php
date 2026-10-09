@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Agent;
+namespace AgentStudio\Domain\Agent;
 
 enum TriggerType: string
 {
@@ -14,6 +14,9 @@ enum TriggerType: string
 
     /** A comment was submitted. */
     case CommentPosted = 'comment_posted';
+
+    /** The agent's timetable came round (every hour, day or week). */
+    case Schedule = 'schedule';
 
     /** An external system called the agent's signed webhook. */
     case Webhook = 'webhook';

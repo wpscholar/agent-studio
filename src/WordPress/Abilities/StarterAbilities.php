@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Abilities;
+namespace AgentStudio\WordPress\Abilities;
 
 use WP_Error;
 use WP_Post;
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Infrastructure\PostTypes;
 
 /**
  * A small set of content abilities so agents are useful on a plain WordPress site.
@@ -14,7 +14,7 @@ use WPAgents\Infrastructure\PostTypes;
  * They follow the normal rules: each one checks the capabilities of the user
  * the agent runs as. Other plugins register richer abilities the same way,
  * and agents can use those too. Return false from the
- * wpa_register_starter_abilities filter to turn these off.
+ * agent_studio_register_starter_abilities filter to turn these off.
  */
 final class StarterAbilities
 {
@@ -28,11 +28,11 @@ final class StarterAbilities
     public function registerAbilities(): void
     {
         /**
-         * Filters whether WP Agents registers its starter abilities.
+         * Filters whether Agent Studio registers its starter abilities.
          *
          * @param bool $register Default true.
          */
-        if (! function_exists('wp_register_ability') || ! apply_filters('wpa_register_starter_abilities', true)) {
+        if (! function_exists('wp_register_ability') || ! apply_filters('agent_studio_register_starter_abilities', true)) {
             return;
         }
 
@@ -40,21 +40,21 @@ final class StarterAbilities
             $meta = [
                 'annotations' => ['readonly' => $readonly, 'destructive' => false, 'idempotent' => $idempotent],
                 'show_in_rest' => true,
-                'mcp' => ['public' => (bool) apply_filters('wpa_expose_abilities_to_mcp', false)],
+                'mcp' => ['public' => (bool) apply_filters('agent_studio_expose_abilities_to_mcp', false)],
             ];
 
             if ($risk !== '') {
-                $meta['wpa'] = ['risk' => $risk];
+                $meta['agent_studio'] = ['risk' => $risk];
             }
 
             return $meta;
         };
 
         wp_register_ability(
-            'wp-agents/get-post',
+            'agent-studio/get-post',
             [
-                'label' => __('Get a post', 'wp-agents'),
-                'description' => __('Returns a post or page: title, content, excerpt, status, author, dates and terms.', 'wp-agents'),
+                'label' => __('Get a post', 'agent-studio'),
+                'description' => __('Returns a post or page: title, content, excerpt, status, author, dates and terms.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -85,10 +85,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/search-posts',
+            'agent-studio/search-posts',
             [
-                'label' => __('Search posts', 'wp-agents'),
-                'description' => __('Finds posts by keyword, post type and status. Returns IDs, titles and statuses.', 'wp-agents'),
+                'label' => __('Search posts', 'agent-studio'),
+                'description' => __('Finds posts by keyword, post type and status. Returns IDs, titles and statuses.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -124,10 +124,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/update-post',
+            'agent-studio/update-post',
             [
-                'label' => __('Update a post', 'wp-agents'),
-                'description' => __('Changes the title, content, excerpt or status of a post. Only the fields you send are changed.', 'wp-agents'),
+                'label' => __('Update a post', 'agent-studio'),
+                'description' => __('Changes the title, content, excerpt or status of a post. Only the fields you send are changed.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -155,10 +155,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/add-post-note',
+            'agent-studio/add-post-note',
             [
-                'label' => __('Add a note to a post', 'wp-agents'),
-                'description' => __('Leaves a private note for editors on a post. Notes are shown in the post editor and never on the site.', 'wp-agents'),
+                'label' => __('Add a note to a post', 'agent-studio'),
+                'description' => __('Leaves a private note for editors on a post. Notes are shown in the post editor and never on the site.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -182,10 +182,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/get-comment',
+            'agent-studio/get-comment',
             [
-                'label' => __('Get a comment', 'wp-agents'),
-                'description' => __('Returns a comment: text, author, status and the post it belongs to.', 'wp-agents'),
+                'label' => __('Get a comment', 'agent-studio'),
+                'description' => __('Returns a comment: text, author, status and the post it belongs to.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -211,10 +211,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/set-comment-status',
+            'agent-studio/set-comment-status',
             [
-                'label' => __('Set a comment status', 'wp-agents'),
-                'description' => __('Approves, holds for moderation, marks as spam, or trashes a comment.', 'wp-agents'),
+                'label' => __('Set a comment status', 'agent-studio'),
+                'description' => __('Approves, holds for moderation, marks as spam, or trashes a comment.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -238,10 +238,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/get-user',
+            'agent-studio/get-user',
             [
-                'label' => __('Get a user', 'wp-agents'),
-                'description' => __('Returns a user: login, display name, roles, registration date, and email when you may see it.', 'wp-agents'),
+                'label' => __('Get a user', 'agent-studio'),
+                'description' => __('Returns a user: login, display name, roles, registration date, and email when you may see it.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -266,10 +266,10 @@ final class StarterAbilities
         );
 
         wp_register_ability(
-            'wp-agents/send-email',
+            'agent-studio/send-email',
             [
-                'label' => __('Send an email', 'wp-agents'),
-                'description' => __('Sends a plain-text email from this site to one recipient.', 'wp-agents'),
+                'label' => __('Send an email', 'agent-studio'),
+                'description' => __('Sends a plain-text email from this site to one recipient.', 'agent-studio'),
                 'category' => AgentAbilities::CATEGORY,
                 'input_schema' => [
                     'type' => 'object',
@@ -300,7 +300,7 @@ final class StarterAbilities
     {
         $post = get_post((int) ($input['id'] ?? 0));
         if (! $post instanceof WP_Post) {
-            return new WP_Error('wpa_not_found', __('Post not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('Post not found.', 'agent-studio'));
         }
 
         $terms = [];
@@ -376,14 +376,19 @@ final class StarterAbilities
         $id = (int) ($input['id'] ?? 0);
         $post = get_post($id);
         if (! $post instanceof WP_Post) {
-            return new WP_Error('wpa_not_found', __('Post not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('Post not found.', 'agent-studio'));
         }
 
         $status = is_string($input['status'] ?? null) ? $input['status'] : '';
         if ($status === 'publish' && ! current_user_can('publish_post', $id)) {
-            return new WP_Error('wpa_forbidden', __('The agent is not allowed to publish this post.', 'wp-agents'));
+            return new WP_Error('agent_studio_forbidden', __('The agent is not allowed to publish this post.', 'agent-studio'));
         }
 
+        /**
+         * @var array{
+         *     ID: int, post_title?: string, post_content?: string, post_excerpt?: string, post_status?: string
+         * } $data
+         */
         $data = ['ID' => $id];
         foreach (['title' => 'post_title', 'content' => 'post_content', 'excerpt' => 'post_excerpt'] as $key => $column) {
             if (is_string($input[$key] ?? null)) {
@@ -418,12 +423,12 @@ final class StarterAbilities
     {
         $postId = (int) ($input['post_id'] ?? 0);
         if (! get_post($postId) instanceof WP_Post) {
-            return new WP_Error('wpa_not_found', __('Post not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('Post not found.', 'agent-studio'));
         }
 
         $text = sanitize_textarea_field(is_string($input['note'] ?? null) ? $input['note'] : '');
         if ($text === '') {
-            return new WP_Error('wpa_empty_note', __('The note is empty.', 'wp-agents'));
+            return new WP_Error('agent_studio_empty_note', __('The note is empty.', 'agent-studio'));
         }
 
         $user = wp_get_current_user();
@@ -450,7 +455,7 @@ final class StarterAbilities
     {
         $comment = get_comment((int) ($input['id'] ?? 0));
         if (! $comment instanceof \WP_Comment) {
-            return new WP_Error('wpa_not_found', __('Comment not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('Comment not found.', 'agent-studio'));
         }
 
         return [
@@ -475,15 +480,15 @@ final class StarterAbilities
         $status = is_string($input['status'] ?? null) ? $input['status'] : '';
 
         if (! in_array($status, ['approve', 'hold', 'spam', 'trash'], true)) {
-            return new WP_Error('wpa_invalid_status', __('Status must be approve, hold, spam or trash.', 'wp-agents'));
+            return new WP_Error('agent_studio_invalid_status', __('Status must be approve, hold, spam or trash.', 'agent-studio'));
         }
 
         if (! get_comment($id) instanceof \WP_Comment) {
-            return new WP_Error('wpa_not_found', __('Comment not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('Comment not found.', 'agent-studio'));
         }
 
         if (! wp_set_comment_status($id, $status)) {
-            return new WP_Error('wpa_update_failed', __('The comment status could not be changed.', 'wp-agents'));
+            return new WP_Error('agent_studio_update_failed', __('The comment status could not be changed.', 'agent-studio'));
         }
 
         return ['id' => $id, 'status' => $status];
@@ -499,7 +504,7 @@ final class StarterAbilities
         $id = (int) ($input['id'] ?? 0);
         $user = get_userdata($id);
         if ($user === false) {
-            return new WP_Error('wpa_not_found', __('User not found.', 'wp-agents'));
+            return new WP_Error('agent_studio_not_found', __('User not found.', 'agent-studio'));
         }
 
         return [
@@ -521,7 +526,7 @@ final class StarterAbilities
     {
         $to = is_string($input['to'] ?? null) ? trim($input['to']) : '';
         if (! is_email($to)) {
-            return new WP_Error('wpa_invalid_email', __('The recipient is not a valid email address.', 'wp-agents'));
+            return new WP_Error('agent_studio_invalid_email', __('The recipient is not a valid email address.', 'agent-studio'));
         }
 
         /**
@@ -530,15 +535,15 @@ final class StarterAbilities
          * @param bool   $allowed Default true.
          * @param string $to      The recipient.
          */
-        if (! apply_filters('wpa_allow_email_recipient', true, $to)) {
-            return new WP_Error('wpa_recipient_blocked', __('This recipient is not allowed.', 'wp-agents'));
+        if (! apply_filters('agent_studio_allow_email_recipient', true, $to)) {
+            return new WP_Error('agent_studio_recipient_blocked', __('This recipient is not allowed.', 'agent-studio'));
         }
 
         $subject = sanitize_text_field(is_string($input['subject'] ?? null) ? $input['subject'] : '');
         $body = sanitize_textarea_field(is_string($input['body'] ?? null) ? $input['body'] : '');
 
         if ($subject === '' || $body === '') {
-            return new WP_Error('wpa_empty_email', __('The subject and body are required.', 'wp-agents'));
+            return new WP_Error('agent_studio_empty_email', __('The subject and body are required.', 'agent-studio'));
         }
 
         return ['sent' => wp_mail($to, $subject, $body)];

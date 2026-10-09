@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Admin;
+namespace AgentStudio\WordPress\Admin;
 
-use WPAgents\Infrastructure\PostTypes;
-use WPAgents\WordPress\Capabilities;
+use AgentStudio\Infrastructure\PostTypes;
+use AgentStudio\WordPress\Capabilities;
 
 /**
  * Adds the plugin's pages under the Agents menu.
@@ -30,9 +30,9 @@ final class Menu
         $parent = 'edit.php?post_type=' . PostTypes::AGENT;
         $capability = Capabilities::manage();
 
-        add_submenu_page($parent, __('Agent runs', 'wp-agents'), __('Runs', 'wp-agents'), $capability, 'wpa-runs', [$this->runs, 'render']);
-        add_submenu_page($parent, __('Agent templates', 'wp-agents'), __('Templates', 'wp-agents'), $capability, 'wpa-templates', [$this->templates, 'render']);
-        add_submenu_page($parent, __('Abilities and readiness', 'wp-agents'), __('Abilities', 'wp-agents'), $capability, 'wpa-abilities', [$this->abilities, 'render']);
-        add_submenu_page($parent, __('Import a skill', 'wp-agents'), __('Import skill', 'wp-agents'), $capability, 'wpa-import-skill', [$this->importSkill, 'render']);
+        add_submenu_page($parent, __('Agent runs', 'agent-studio'), __('Runs', 'agent-studio'), $capability, 'agent-studio-runs', [$this->runs, 'render']);
+        add_submenu_page($parent, __('Agent templates', 'agent-studio'), __('Templates', 'agent-studio'), $capability, 'agent-studio-templates', [$this->templates, 'render']);
+        add_submenu_page($parent, __('Abilities and readiness', 'agent-studio'), __('Abilities', 'agent-studio'), $capability, 'agent-studio-abilities', [$this->abilities, 'render']);
+        add_submenu_page($parent, __('Import a skill', 'agent-studio'), __('Import skill', 'agent-studio'), $capability, 'agent-studio-import-skill', [$this->importSkill, 'render']);
     }
 }

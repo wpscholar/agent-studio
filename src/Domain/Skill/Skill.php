@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Skill;
+namespace AgentStudio\Domain\Skill;
 
 use InvalidArgumentException;
 

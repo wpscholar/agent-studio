@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts\Model;
+namespace AgentStudio\Contracts\Model;
 
-use WPAgents\Domain\Conversation\Message;
+use AgentStudio\Domain\Conversation\Message;
 
 final class ModelRequest
 {
     /**
      * @param list<Message>  $messages
      * @param list<ToolSpec> $tools
+     * @param string         $model    A model ID, or empty to let the AI Client choose one that can use the tools.
+     * @param string         $provider The provider that serves $model. Empty means any provider.
      */
     public function __construct(
         public readonly string $systemPrompt,
@@ -18,6 +20,7 @@ final class ModelRequest
         public readonly array $tools,
         public readonly string $model = '',
         public readonly int $maxTokens = 4096,
+        public readonly string $provider = '',
     ) {
     }
 }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Admin;
+namespace AgentStudio\WordPress\Admin;
 
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Infrastructure\PostTypes;
 
 /**
  * Loads the admin script and stylesheet on the plugin's own screens only.
@@ -23,25 +23,36 @@ final class Assets
             return;
         }
 
-        wp_enqueue_style('wpa-admin', WP_AGENTS_URL . 'assets/admin.css', [], WP_AGENTS_VERSION);
-        $script = is_file(WP_AGENTS_PATH . 'build/assets/admin.js') ? 'build/assets/admin.js' : 'assets/admin.js';
-        wp_enqueue_script('wpa-admin', WP_AGENTS_URL . $script, [], WP_AGENTS_VERSION, true);
+        wp_enqueue_style('agent-studio-admin', AGENT_STUDIO_URL . 'assets/admin.css', [], self::version('assets/admin.css'));
+        $script = is_file(AGENT_STUDIO_PATH . 'build/assets/admin.js') ? 'build/assets/admin.js' : 'assets/admin.js';
+        wp_enqueue_script('agent-studio-admin', AGENT_STUDIO_URL . $script, [], self::version($script), true);
         wp_localize_script(
-            'wpa-admin',
-            'wpaAdmin',
+            'agent-studio-admin',
+            'agentStudioAdmin',
             [
-                'restRoot' => esc_url_raw(rest_url('wp-agents/v1/')),
+                'restRoot' => esc_url_raw(rest_url('agent-studio/v1/')),
                 'nonce' => wp_create_nonce('wp_rest'),
-                'runUrl' => esc_url_raw(admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=wpa-runs&run=')),
+                'runUrl' => esc_url_raw(admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-runs&run=')),
                 'i18n' => [
-                    'running' => __('Starting…', 'wp-agents'),
-                    'queued' => __('Queued. Waiting for the run to finish…', 'wp-agents'),
-                    'viewRun' => __('View run', 'wp-agents'),
-                    'failed' => __('The agent could not be started.', 'wp-agents'),
-                    'copied' => __('Copied', 'wp-agents'),
-                    'saveFirst' => __('Save the agent before running it.', 'wp-agents'),
+                    'running' => __('Starting…', 'agent-studio'),
+                    'queued' => __('Queued. Waiting for the run to finish…', 'agent-studio'),
+                    'viewRun' => __('View run', 'agent-studio'),
+                    'failed' => __('The agent could not be started.', 'agent-studio'),
+                    'copied' => __('Copied', 'agent-studio'),
+                    'saveFirst' => __('Save the agent before running it.', 'agent-studio'),
                 ],
             ]
         );
+    }
+
+    /**
+     * The plugin version plus the file's modified time, so browsers fetch a
+     * changed file even when the plugin version has not changed.
+     */
+    private static function version(string $file): string
+    {
+        $mtime = @filemtime(AGENT_STUDIO_PATH . $file); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+        return $mtime === false ? AGENT_STUDIO_VERSION : AGENT_STUDIO_VERSION . '.' . $mtime;
     }
 }

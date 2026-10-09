@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Admin;
+namespace AgentStudio\WordPress\Admin;
 
 use WP_Post;
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Infrastructure\PostTypes;
 
 /**
  * Shows the private notes agents left on a post, in the post editor.
@@ -28,15 +28,16 @@ final class PostNotes
             return;
         }
 
-        add_meta_box('wpa-notes', __('Agent notes', 'wp-agents'), [$this, 'render'], $postType, 'side', 'default');
+        add_meta_box('agent-studio-notes', __('Agent notes', 'agent-studio'), [$this, 'render'], $postType, 'side', 'default');
     }
 
     public function render(WP_Post $post): void
     {
         $notes = get_post_meta($post->ID, PostTypes::NOTES_META, true);
         $notes = is_array($notes) ? array_reverse($notes) : [];
+        $format = get_option('date_format') . ' ' . get_option('time_format');
 
-        echo '<p class="description">' . esc_html__('Private notes left by agents. Visitors never see these.', 'wp-agents') . '</p>';
+        echo '<p class="description">' . esc_html__('Private notes left by agents. Visitors never see these.', 'agent-studio') . '</p>';
 
         foreach ($notes as $note) {
             if (! is_array($note)) {
@@ -44,9 +45,9 @@ final class PostNotes
             }
 
             printf(
-                '<div class="wpa-note"><div class="wpa-note__meta">%1$s · %2$s</div><div>%3$s</div></div>',
+                '<div class="agent-studio-note"><div class="agent-studio-note__meta">%1$s · %2$s</div><div>%3$s</div></div>',
                 esc_html((string) ($note['author'] ?? '')),
-                esc_html(wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) ($note['at'] ?? 0))),
+                esc_html((string) wp_date($format, (int) ($note['at'] ?? 0))),
                 nl2br(esc_html((string) ($note['note'] ?? '')))
             );
         }

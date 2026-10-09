@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Dispatch;
+namespace AgentStudio\Application\Dispatch;
 
 final class DispatchResult
 {

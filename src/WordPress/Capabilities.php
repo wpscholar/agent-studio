@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
 final class Capabilities
 {
@@ -15,11 +15,11 @@ final class Capabilities
     public static function manage(): string
     {
         /**
-         * Filters the capability required to manage WP Agents.
+         * Filters the capability required to manage Agent Studio.
          *
          * @param string $capability Default "manage_options".
          */
-        return (string) apply_filters('wpa_manage_capability', 'manage_options');
+        return (string) apply_filters('agent_studio_manage_capability', 'manage_options');
     }
 
     public static function canManage(): bool

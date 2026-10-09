@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
-use WPAgents\Domain\Skill\Skill;
+use AgentStudio\Domain\Skill\Skill;
 
 interface SkillRepository
 {

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Approval;
+namespace AgentStudio\Application\Approval;
 
-use WPAgents\Application\Execute\ToolExecutor;
-use WPAgents\Application\Execute\ToolRegistryFactory;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\JobQueue;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Conversation\ToolCall;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\Domain\Run\StepKind;
+use AgentStudio\Application\Execute\ToolExecutor;
+use AgentStudio\Application\Execute\ToolRegistryFactory;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\JobQueue;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Conversation\ToolCall;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\Domain\Run\StepKind;
 
 /**
  * Applies a person's decision to a run that is waiting for approval,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Ability;
+namespace AgentStudio\Domain\Ability;
 
 /**
  * Maps ability names ("namespace/ability-name") to model tool names.

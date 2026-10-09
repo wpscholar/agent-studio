@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\Ability\AbilityResult;
-use WPAgents\Contracts\AbilityGateway;
-use WPAgents\Domain\Ability\AbilityInfo;
-use WPAgents\Domain\Ability\Risk;
+use AgentStudio\Contracts\Ability\AbilityResult;
+use AgentStudio\Contracts\AbilityGateway;
+use AgentStudio\Domain\Ability\AbilityInfo;
+use AgentStudio\Domain\Ability\Risk;
 
 final class FakeAbilityGateway implements AbilityGateway
 {

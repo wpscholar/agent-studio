@@ -2,54 +2,59 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress;
+namespace AgentStudio\WordPress;
 
-use WPAgents\Application\Approval\ResolveApprovalHandler;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Application\Execute\ExecuteRunHandler;
-use WPAgents\Application\Execute\ToolExecutor;
-use WPAgents\Application\Execute\ToolRegistryFactory;
-use WPAgents\Application\Prompt\PromptBuilder;
-use WPAgents\Application\Retention\PruneRunsHandler;
-use WPAgents\Application\Run\CancelRunHandler;
-use WPAgents\Contracts\AbilityGateway;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\Identity;
-use WPAgents\Contracts\JobQueue;
-use WPAgents\Contracts\ModelClient;
-use WPAgents\Contracts\Notifier;
-use WPAgents\Contracts\RecursionGuard;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Contracts\Settings;
-use WPAgents\Contracts\SkillRepository;
-use WPAgents\Infrastructure\AbilitiesApiGateway;
-use WPAgents\Infrastructure\CoreAiModelClient;
-use WPAgents\Infrastructure\ProcessRecursionGuard;
-use WPAgents\Infrastructure\Schema;
-use WPAgents\Infrastructure\SystemClock;
-use WPAgents\Infrastructure\WordPressAgentRepository;
-use WPAgents\Infrastructure\WordPressIdentity;
-use WPAgents\Infrastructure\WordPressJobQueue;
-use WPAgents\Infrastructure\WordPressNotifier;
-use WPAgents\Infrastructure\WordPressSettings;
-use WPAgents\Infrastructure\WordPressSkillRepository;
-use WPAgents\Infrastructure\WpdbRunRepository;
-use WPAgents\WordPress\Abilities\AgentAbilities;
-use WPAgents\WordPress\Abilities\StarterAbilities;
-use WPAgents\WordPress\Admin\AbilitiesPage;
-use WPAgents\WordPress\Admin\AgentEditor;
-use WPAgents\WordPress\Admin\Assets;
-use WPAgents\WordPress\Admin\ImportSkillPage;
-use WPAgents\WordPress\Admin\Menu;
-use WPAgents\WordPress\Admin\PostNotes;
-use WPAgents\WordPress\Admin\RunsPage;
-use WPAgents\WordPress\Admin\TemplatesPage;
-use WPAgents\WordPress\Cli\AgentsCommand;
-use WPAgents\WordPress\Hooks\TriggerHooks;
-use WPAgents\WordPress\Hooks\WorkerHooks;
-use WPAgents\WordPress\Rest\AgentsController;
-use WPAgents\WordPress\Rest\WebhookController;
+use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Application\Execute\ExecuteRunHandler;
+use AgentStudio\Application\Execute\ToolExecutor;
+use AgentStudio\Application\Execute\ToolRegistryFactory;
+use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Application\Retention\PruneRunsHandler;
+use AgentStudio\Application\Run\CancelRunHandler;
+use AgentStudio\Application\Schedule\RunSchedulesHandler;
+use AgentStudio\Contracts\AbilityGateway;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\Identity;
+use AgentStudio\Contracts\JobQueue;
+use AgentStudio\Contracts\ModelClient;
+use AgentStudio\Contracts\Notifier;
+use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Contracts\ScheduleState;
+use AgentStudio\Contracts\Settings;
+use AgentStudio\Contracts\SkillRepository;
+use AgentStudio\Infrastructure\AbilitiesApiGateway;
+use AgentStudio\Infrastructure\AiModelCatalog;
+use AgentStudio\Infrastructure\CoreAiModelClient;
+use AgentStudio\Infrastructure\OptionScheduleState;
+use AgentStudio\Infrastructure\ProcessRecursionGuard;
+use AgentStudio\Infrastructure\Schema;
+use AgentStudio\Infrastructure\SystemClock;
+use AgentStudio\Infrastructure\WordPressAgentRepository;
+use AgentStudio\Infrastructure\WordPressIdentity;
+use AgentStudio\Infrastructure\WordPressJobQueue;
+use AgentStudio\Infrastructure\WordPressNotifier;
+use AgentStudio\Infrastructure\WordPressSettings;
+use AgentStudio\Infrastructure\WordPressSkillRepository;
+use AgentStudio\Infrastructure\WpdbRunRepository;
+use AgentStudio\WordPress\Abilities\AgentAbilities;
+use AgentStudio\WordPress\Abilities\StarterAbilities;
+use AgentStudio\WordPress\Admin\AbilitiesPage;
+use AgentStudio\WordPress\Admin\AgentEditor;
+use AgentStudio\WordPress\Admin\Assets;
+use AgentStudio\WordPress\Admin\ImportSkillPage;
+use AgentStudio\WordPress\Admin\Menu;
+use AgentStudio\WordPress\Admin\PostNotes;
+use AgentStudio\WordPress\Admin\RunsPage;
+use AgentStudio\WordPress\Admin\TemplatesPage;
+use AgentStudio\WordPress\Cli\AgentsCommand;
+use AgentStudio\WordPress\Hooks\ScheduleHooks;
+use AgentStudio\WordPress\Hooks\TriggerHooks;
+use AgentStudio\WordPress\Hooks\WorkerHooks;
+use AgentStudio\WordPress\Rest\AgentsController;
+use AgentStudio\WordPress\Rest\WebhookController;
 
 /**
  * Builds the object graph and connects it to WordPress.
@@ -67,6 +72,7 @@ final class Plugin
         $container->get(PostTypeRegistrar::class)->register();
         $container->get(TriggerHooks::class)->register();
         $container->get(WorkerHooks::class)->register();
+        $container->get(ScheduleHooks::class)->register();
         $container->get(WebhookController::class)->register();
         $container->get(AgentsController::class)->register();
         $container->get(AgentAbilities::class)->register();
@@ -87,12 +93,12 @@ final class Plugin
         }
 
         /**
-         * Fires once WP Agents is ready. Other plugins can register their own
+         * Fires once Agent Studio is ready. Other plugins can register their own
          * abilities, or read services from the container here.
          *
          * @param Container $container The service container.
          */
-        do_action('wpa_loaded', $container);
+        do_action('agent_studio_loaded', $container);
     }
 
     public static function activate(): void
@@ -102,11 +108,14 @@ final class Plugin
         $container = self::container();
         $container->get(PostTypeRegistrar::class)->registerPostTypes();
         WorkerHooks::schedulePruning();
+        add_filter('cron_schedules', [ScheduleHooks::class, 'addInterval']);
+        ScheduleHooks::scheduleChecks();
     }
 
     public static function deactivate(): void
     {
         wp_clear_scheduled_hook(WorkerHooks::PRUNE_HOOK);
+        wp_clear_scheduled_hook(ScheduleHooks::HOOK);
     }
 
     public static function container(): Container
@@ -132,6 +141,7 @@ final class Plugin
         $c->set(SkillRepository::class, static fn (): SkillRepository => new WordPressSkillRepository());
         $c->set(RunRepository::class, static fn (): RunRepository => new WpdbRunRepository());
         $c->set(AbilityGateway::class, static fn (): AbilityGateway => new AbilitiesApiGateway());
+        $c->set(ScheduleState::class, static fn (): ScheduleState => new OptionScheduleState());
 
         $c->set(
             ModelClient::class,
@@ -144,7 +154,7 @@ final class Plugin
                  *
                  * @param ModelClient $client The default client, built on the WordPress AI Client.
                  */
-                $client = apply_filters('wpa_model_client', $default);
+                $client = apply_filters('agent_studio_model_client', $default);
 
                 return $client instanceof ModelClient ? $client : $default;
             }
@@ -168,7 +178,10 @@ final class Plugin
             )
         );
 
-        $c->set(PromptBuilder::class, static fn (): PromptBuilder => new PromptBuilder());
+        $c->set(
+            PromptBuilder::class,
+            static fn (Container $c): PromptBuilder => new PromptBuilder()
+        );
 
         $c->set(
             DispatchTriggerHandler::class,
@@ -230,6 +243,19 @@ final class Plugin
         $c->set(
             TriggerHooks::class,
             static fn (Container $c): TriggerHooks => new TriggerHooks($c->get(DispatchTriggerHandler::class))
+        );
+        $c->set(
+            RunSchedulesHandler::class,
+            static fn (Container $c): RunSchedulesHandler => new RunSchedulesHandler(
+                $c->get(AgentRepository::class),
+                $c->get(DispatchTriggerHandler::class),
+                $c->get(ScheduleState::class),
+                $c->get(Clock::class)
+            )
+        );
+        $c->set(
+            ScheduleHooks::class,
+            static fn (Container $c): ScheduleHooks => new ScheduleHooks($c->get(RunSchedulesHandler::class))
         );
         $c->set(
             WorkerHooks::class,
@@ -300,7 +326,8 @@ final class Plugin
                 $c->get(AgentRepository::class),
                 $c->get(RunRepository::class),
                 $c->get(SkillRepository::class),
-                $c->get(AbilityGateway::class)
+                $c->get(AbilityGateway::class),
+                new AiModelCatalog()
             )
         );
         $c->set(

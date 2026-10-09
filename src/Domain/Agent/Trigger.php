@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Agent;
+namespace AgentStudio\Domain\Agent;
 
 /**
  * One way an agent can be started, with optional filters.
@@ -11,6 +11,7 @@ namespace WPAgents\Domain\Agent;
  *  - post_status:    post_types, from, to   (lists; empty means any)
  *  - user_registered: roles                 (list; empty means any)
  *  - comment_posted:  post_types            (list; empty means any)
+ *  - schedule:       every, at, day        (see Schedule)
  *  - webhook, manual: none
  */
 final class Trigger
@@ -38,7 +39,7 @@ final class Trigger
                 && $this->listAllows('from', self::string($payload['old_status'] ?? '')),
             TriggerType::UserRegistered => $this->listAllowsAny('roles', self::strings($payload['roles'] ?? [])),
             TriggerType::CommentPosted => $this->listAllows('post_types', self::string($payload['post_type'] ?? '')),
-            TriggerType::Webhook, TriggerType::Manual => true,
+            TriggerType::Schedule, TriggerType::Webhook, TriggerType::Manual => true,
         };
     }
 

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<ruleset name="WP Agents">
+<ruleset name="Agent Studio">
   <description>PSR-12 as the primary coding standard, with WordPress security and i18n sniffs applied selectively. PHPCompatibilityWP covers the PHP version range.</description>
 
   <file>src</file>
-  <file>wp-agents.php</file>
+  <file>agent-studio.php</file>
   <file>uninstall.php</file>
   <file>tests</file>
 
@@ -20,7 +20,9 @@
   <!-- Selective WordPress i18n sniffs. -->
   <rule ref="WordPress.WP.I18n">
     <properties>
-      <property name="text_domain" type="array" value="wp-agents"/>
+      <property name="text_domain" type="array">
+        <element value="agent-studio"/>
+      </property>
     </properties>
   </rule>
 
@@ -29,7 +31,7 @@
 
   <!-- The main file and uninstall.php are procedural bootstraps that legitimately mix declarations and side effects. -->
   <rule ref="PSR1.Files.SideEffects">
-    <exclude-pattern>wp-agents.php</exclude-pattern>
+    <exclude-pattern>agent-studio.php</exclude-pattern>
     <exclude-pattern>uninstall.php</exclude-pattern>
     <exclude-pattern>tests/bootstrap.php</exclude-pattern>
   </rule>
@@ -37,6 +39,16 @@
   <!-- Tests do not render output or handle requests. -->
   <rule ref="WordPress.Security">
     <exclude-pattern>tests/*</exclude-pattern>
+  </rule>
+
+  <!-- WordPress test cases override snake_case hooks (set_up, tear_down) and name tests test_*. -->
+  <rule ref="PSR1.Methods.CamelCapsMethodName">
+    <exclude-pattern>tests/integration/*</exclude-pattern>
+  </rule>
+
+  <!-- PSR-12 makes line length a soft recommendation; long translatable strings read better unbroken. -->
+  <rule ref="Generic.Files.LineLength">
+    <exclude name="Generic.Files.LineLength.TooLong"/>
   </rule>
 
   <config name="minimum_supported_wp_version" value="7.0"/>

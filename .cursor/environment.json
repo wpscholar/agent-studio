@@ -1,7 +1,5 @@
 {
   "install": "make setup",
   "start": "make start",
-  "terminals": [
-    { "name": "app", "command": "make start" }
-  ]
+  "terminals": [{ "name": "app", "command": "make start" }]
 }

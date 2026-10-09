@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Application\Approval\ResolveApprovalHandler;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Application\Execute\ExecuteRunHandler;
-use WPAgents\Application\Execute\ToolExecutor;
-use WPAgents\Application\Execute\ToolRegistryFactory;
-use WPAgents\Application\Prompt\PromptBuilder;
-use WPAgents\Application\Run\CancelRunHandler;
-use WPAgents\Domain\Ability\Risk;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\AgentStatus;
-use WPAgents\Domain\Agent\ApprovalMode;
-use WPAgents\Domain\Agent\Trigger;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Infrastructure\ProcessRecursionGuard;
+use AgentStudio\Application\Approval\ResolveApprovalHandler;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Application\Execute\ExecuteRunHandler;
+use AgentStudio\Application\Execute\ToolExecutor;
+use AgentStudio\Application\Execute\ToolRegistryFactory;
+use AgentStudio\Application\Prompt\PromptBuilder;
+use AgentStudio\Application\Run\CancelRunHandler;
+use AgentStudio\Domain\Ability\Risk;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\AgentStatus;
+use AgentStudio\Domain\Agent\ApprovalMode;
+use AgentStudio\Domain\Agent\Trigger;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Infrastructure\ProcessRecursionGuard;
 
 /**
  * Wires the whole Application layer to in-memory fakes.

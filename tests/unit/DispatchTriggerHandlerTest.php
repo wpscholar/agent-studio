@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Application\Dispatch\DispatchOutcome;
-use WPAgents\Domain\Agent\AgentStatus;
-use WPAgents\Domain\Agent\Trigger;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\Tests\Support\TestWorld;
+use AgentStudio\Application\Dispatch\DispatchOutcome;
+use AgentStudio\Domain\Agent\AgentStatus;
+use AgentStudio\Domain\Agent\Trigger;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\Tests\Support\TestWorld;
 
 final class DispatchTriggerHandlerTest extends TestCase
 {

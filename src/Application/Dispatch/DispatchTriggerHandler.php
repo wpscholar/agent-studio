@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Dispatch;
+namespace AgentStudio\Application\Dispatch;
 
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Contracts\Clock;
-use WPAgents\Contracts\JobQueue;
-use WPAgents\Contracts\RecursionGuard;
-use WPAgents\Contracts\RunRepository;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Run\Run;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Contracts\Clock;
+use AgentStudio\Contracts\JobQueue;
+use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Contracts\RunRepository;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Run\Run;
 
 /**
  * Turns an event into queued runs for every agent that should react to it.

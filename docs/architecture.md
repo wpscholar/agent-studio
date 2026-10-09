@@ -42,3 +42,9 @@ If the code answers **"how does WordPress do it?"** → Infrastructure / WordPre
 - Service locator pattern instead of constructor injection.
 
 See the canonical references above for examples and patterns (Command/Handler, Repository, Adapter, Service Provider, Factory, DTO, Strategy, Policy).
+
+## WordPress Knowledge
+
+Gutenberg is experimenting with a `wp_knowledge` post type, typed by a `wp_knowledge_type` taxonomy (guideline, memory, note), for content AI features read ([gutenberg#77230](https://github.com/WordPress/gutenberg/issues/77230)). It is not in core, and as of October 2026 it is not planned for the near term, so Agent Studio never depends on it and does not read site guidelines.
+
+- Skills already have the shape core plans for knowledge documents (title, excerpt as the description, content as the body, revisions). If core ships a `skill` type, it can become another `SkillRepository` adapter.

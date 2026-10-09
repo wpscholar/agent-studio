@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
-use WPAgents\Contracts\RecursionGuard;
+use AgentStudio\Contracts\RecursionGuard;
 
 /**
  * Tracks, for the current PHP process, whether an agent is acting.

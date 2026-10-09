@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Application\Execute;
+namespace AgentStudio\Application\Execute;
 
-use WPAgents\Contracts\AbilityGateway;
-use WPAgents\Contracts\SkillRepository;
-use WPAgents\Domain\Agent\Agent;
+use AgentStudio\Contracts\AbilityGateway;
+use AgentStudio\Contracts\SkillRepository;
+use AgentStudio\Domain\Agent\Agent;
 
 final class ToolRegistryFactory
 {

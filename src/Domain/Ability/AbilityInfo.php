@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Ability;
+namespace AgentStudio\Domain\Ability;
 
 /**
  * A framework-neutral description of an ability an agent could use.

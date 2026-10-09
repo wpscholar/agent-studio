@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var config = window.wpaAdmin || { i18n: {} };
+  var config = window.agentStudioAdmin || { i18n: {} };
 
   function ready(fn) {
     if (document.readyState !== 'loading') {
@@ -30,56 +30,75 @@
   }
 
   function initTriggers() {
-    document.querySelectorAll('[data-wpa-trigger]').forEach(function (box) {
-      var card = box.closest('.wpa-trigger');
-      box.addEventListener('change', function () {
-        card.classList.toggle('is-on', box.checked);
+    document
+      .querySelectorAll('[data-agent-studio-trigger]')
+      .forEach(function (box) {
+        var card = box.closest('.agent-studio-trigger');
+        box.addEventListener('change', function () {
+          card.classList.toggle('is-on', box.checked);
+        });
       });
-    });
+  }
+
+  function initSchedule() {
+    var box = document.querySelector('[data-agent-studio-schedule]');
+    if (!box) {
+      return;
+    }
+    var every = box.querySelector('[data-agent-studio-schedule-every]');
+    var day = box.querySelector('[data-agent-studio-schedule-day]');
+    function update() {
+      day.hidden = every.value !== 'weekly';
+    }
+    every.addEventListener('change', update);
+    update();
   }
 
   function initFilter() {
-    var input = document.querySelector('[data-wpa-filter]');
+    var input = document.querySelector('[data-agent-studio-filter]');
     if (!input) {
       return;
     }
     input.addEventListener('input', function () {
       var term = input.value.trim().toLowerCase();
       document
-        .querySelectorAll('.wpa-abilities .wpa-ability')
+        .querySelectorAll('.agent-studio-abilities .agent-studio-ability')
         .forEach(function (row) {
           row.hidden =
             term !== '' &&
-            (row.getAttribute('data-wpa-text') || '').indexOf(term) === -1;
+            (row.getAttribute('data-agent-studio-text') || '').indexOf(term) ===
+              -1;
         });
     });
   }
 
   function initCopy() {
-    document.querySelectorAll('[data-wpa-copy]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var field = document.querySelector(
-          button.getAttribute('data-wpa-copy'),
-        );
-        if (!field) {
-          return;
-        }
-        field.select();
-        var done = function () {
-          var label = button.textContent;
-          button.textContent = config.i18n.copied;
-          setTimeout(function () {
-            button.textContent = label;
-          }, 1500);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(field.value).then(done);
-        } else {
-          document.execCommand('copy');
-          done();
-        }
+    document
+      .querySelectorAll('[data-agent-studio-copy]')
+      .forEach(function (button) {
+        button.addEventListener('click', function () {
+          var field = document.querySelector(
+            button.getAttribute('data-agent-studio-copy'),
+          );
+          if (!field) {
+            return;
+          }
+          field.select();
+          var done = function () {
+            var label = button.textContent;
+            button.textContent = config.i18n.copied;
+            setTimeout(function () {
+              button.textContent = label;
+            }, 1500);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(field.value).then(done);
+          } else {
+            document.execCommand('copy');
+            done();
+          }
+        });
       });
-    });
   }
 
   function showLink(status, runId, text) {
@@ -115,18 +134,21 @@
   }
 
   function initRun() {
-    var button = document.querySelector('[data-wpa-run]');
-    var status = document.querySelector('[data-wpa-run-status]');
+    var button = document.querySelector('[data-agent-studio-run]');
+    var status = document.querySelector('[data-agent-studio-run-status]');
     if (!button || !status) {
       return;
     }
     button.addEventListener('click', function () {
       button.disabled = true;
       status.textContent = config.i18n.running;
-      request('agents/' + button.getAttribute('data-wpa-run') + '/run', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      })
+      request(
+        'agents/' + button.getAttribute('data-agent-studio-run') + '/run',
+        {
+          method: 'POST',
+          body: JSON.stringify({}),
+        },
+      )
         .then(function (body) {
           showLink(status, body.run_id, config.i18n.queued);
           poll(status, body.run_id, 30);
@@ -142,6 +164,7 @@
 
   ready(function () {
     initTriggers();
+    initSchedule();
     initFilter();
     initCopy();
     initRun();

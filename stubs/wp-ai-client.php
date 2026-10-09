@@ -25,7 +25,10 @@ if (! class_exists('WP_AI_Client_Prompt_Builder')) {
             return $this;
         }
 
-        public function using_model_preference(string ...$models): self
+        /**
+         * @param string|array{0: string, 1: string} ...$models Model IDs, or [provider ID, model ID] pairs.
+         */
+        public function using_model_preference(string|array ...$models): self
         {
             return $this;
         }

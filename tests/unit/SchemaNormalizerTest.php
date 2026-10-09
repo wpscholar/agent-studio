@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Ability\SchemaNormalizer;
+use AgentStudio\Domain\Ability\SchemaNormalizer;
 
 final class SchemaNormalizerTest extends TestCase
 {

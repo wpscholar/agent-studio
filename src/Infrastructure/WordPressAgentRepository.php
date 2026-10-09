@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
 use WP_Post;
-use WPAgents\Contracts\AgentRepository;
-use WPAgents\Domain\Agent\Agent;
-use WPAgents\Domain\Agent\TriggerType;
+use AgentStudio\Contracts\AgentRepository;
+use AgentStudio\Domain\Agent\Agent;
+use AgentStudio\Domain\Agent\TriggerType;
 
 /**
- * Agents are posts of type wpa_agent: the title is the name, the content is the
+ * Agents are posts of type agent_studio_agent: the title is the name, the content is the
  * instructions, and everything else is a JSON blob in post meta.
  */
 final class WordPressAgentRepository implements AgentRepository

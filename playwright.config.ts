@@ -8,7 +8,8 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: process.env.WP_URL || 'http://localhost',
+    baseURL:
+      process.env.WP_URL || `http://localhost:${process.env.WP_PORT || 8484}`,
     trace: 'retain-on-failure',
   },
   projects: [

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Contracts;
+namespace AgentStudio\Contracts;
 
-use WPAgents\Contracts\Ability\AbilityResult;
-use WPAgents\Domain\Ability\AbilityInfo;
+use AgentStudio\Contracts\Ability\AbilityResult;
+use AgentStudio\Domain\Ability\AbilityInfo;
 
 /**
  * The abilities registered on the site, and a way to call them.

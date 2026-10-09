@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Ability\Risk;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Domain\Conversation\Message;
-use WPAgents\Domain\Conversation\ToolCall;
-use WPAgents\Domain\Run\InvalidRunTransition;
-use WPAgents\Domain\Run\PendingApproval;
-use WPAgents\Domain\Run\Run;
-use WPAgents\Domain\Run\RunStatus;
-use WPAgents\Domain\Run\StepKind;
+use AgentStudio\Domain\Ability\Risk;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Domain\Conversation\Message;
+use AgentStudio\Domain\Conversation\ToolCall;
+use AgentStudio\Domain\Run\InvalidRunTransition;
+use AgentStudio\Domain\Run\PendingApproval;
+use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\RunStatus;
+use AgentStudio\Domain\Run\StepKind;
 
 final class RunTest extends TestCase
 {

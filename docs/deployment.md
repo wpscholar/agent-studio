@@ -18,9 +18,9 @@ The trigger uses `tags: ['[0-9]+.[0-9]+.[0-9]+*']`, which matches `1.0.0`, `1.4.
   ```json
   {
     "repositories": [
-      { "type": "vcs", "url": "https://github.com/wpscholar/wp-agents" }
+      { "type": "vcs", "url": "https://github.com/wpscholar/agent-studio" }
     ],
-    "require": { "wpscholar/wp-agents": "^0.1" }
+    "require": { "wpscholar/agent-studio": "^0.1" }
   }
   ```
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Hooks;
+namespace AgentStudio\WordPress\Hooks;
 
 use Throwable;
 use WP_Comment;
 use WP_Post;
-use WPAgents\Application\Dispatch\DispatchTriggerHandler;
-use WPAgents\Domain\Agent\TriggerEvent;
-use WPAgents\Domain\Agent\TriggerType;
-use WPAgents\Infrastructure\PostTypes;
+use AgentStudio\Application\Dispatch\DispatchTriggerHandler;
+use AgentStudio\Domain\Agent\TriggerEvent;
+use AgentStudio\Domain\Agent\TriggerType;
+use AgentStudio\Infrastructure\PostTypes;
 
 /**
  * Turns WordPress events into trigger events. Contains no agent logic: it only
@@ -78,7 +78,7 @@ final class TriggerHooks
          *
          * @param string[] $types Default array( 'comment' ).
          */
-        $types = (array) apply_filters('wpa_comment_trigger_types', ['comment']);
+        $types = (array) apply_filters('agent_studio_comment_trigger_types', ['comment']);
         if (! in_array($comment->comment_type, $types, true)) {
             return;
         }
@@ -112,7 +112,7 @@ final class TriggerHooks
          * @param array<string, mixed> $payload The event data.
          * @param string               $type    The trigger type, for example "user_registered".
          */
-        $filtered = apply_filters('wpa_trigger_payload', $payload, $type->value);
+        $filtered = apply_filters('agent_studio_trigger_payload', $payload, $type->value);
 
         try {
             $this->dispatch->handle(
@@ -120,10 +120,10 @@ final class TriggerHooks
             );
         } catch (Throwable $e) {
             // Never let an agent problem break the action that triggered it (saving a post, signing up).
-            do_action('wpa_dispatch_failed', $e, $type->value);
+            do_action('agent_studio_dispatch_failed', $e, $type->value);
 
             if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                error_log('WP Agents: could not dispatch ' . $type->value . ': ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log('Agent Studio: could not dispatch ' . $type->value . ': ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
             }
         }
     }
@@ -136,7 +136,7 @@ final class TriggerHooks
          * @param string[] $postTypes Internal WordPress types and the plugin's own.
          */
         $ignored = (array) apply_filters(
-            'wpa_ignored_post_types',
+            'agent_studio_ignored_post_types',
             ['revision', 'nav_menu_item', 'customize_changeset', 'oembed_cache', 'user_request', PostTypes::AGENT, PostTypes::SKILL]
         );
 

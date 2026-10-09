@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\WordPress\Hooks;
+namespace AgentStudio\WordPress\Hooks;
 
-use WPAgents\Application\Execute\ExecuteRunHandler;
-use WPAgents\Application\Retention\PruneRunsHandler;
-use WPAgents\Infrastructure\WordPressJobQueue;
+use AgentStudio\Application\Execute\ExecuteRunHandler;
+use AgentStudio\Application\Retention\PruneRunsHandler;
+use AgentStudio\Infrastructure\WordPressJobQueue;
 
 /**
  * The background side: executing queued runs and pruning old ones.
  */
 final class WorkerHooks
 {
-    public const PRUNE_HOOK = 'wpa_prune_runs';
+    public const PRUNE_HOOK = 'agent_studio_prune_runs';
 
     public function __construct(
         private readonly ExecuteRunHandler $execute,

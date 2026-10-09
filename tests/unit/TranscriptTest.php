@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Unit;
+namespace AgentStudio\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use WPAgents\Domain\Conversation\Message;
-use WPAgents\Domain\Conversation\ToolCall;
-use WPAgents\Domain\Conversation\Transcript;
+use AgentStudio\Domain\Conversation\Message;
+use AgentStudio\Domain\Conversation\ToolCall;
+use AgentStudio\Domain\Conversation\Transcript;
 
 final class TranscriptTest extends TestCase
 {

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
 use LogicException;
-use WPAgents\Contracts\Model\ModelException;
-use WPAgents\Contracts\Model\ModelRequest;
-use WPAgents\Contracts\Model\ModelResponse;
-use WPAgents\Contracts\ModelClient;
-use WPAgents\Domain\Conversation\ToolCall;
+use AgentStudio\Contracts\Model\ModelException;
+use AgentStudio\Contracts\Model\ModelRequest;
+use AgentStudio\Contracts\Model\ModelResponse;
+use AgentStudio\Contracts\ModelClient;
+use AgentStudio\Domain\Conversation\ToolCall;
 
 /**
  * Replies with pre-written responses, in order, and records every request.

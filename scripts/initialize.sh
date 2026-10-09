@@ -17,15 +17,15 @@ find . -type f \
   -not -path './build/*' \
   -not -name 'initialize.sh' \
   -exec sed -i.bak \
-    -e "s|wp-agents|$slug|g" \
-    -e "s|WP Agents|$name|g" \
-    -e "s|WPAgents|$namespace|g" \
-    -e "s|WP_AGENTS|$upper|g" \
+    -e "s|agent-studio|$slug|g" \
+    -e "s|Agent Studio|$name|g" \
+    -e "s|AgentStudio|$namespace|g" \
+    -e "s|AGENT_STUDIO|$upper|g" \
     -e "s|Build AI agents inside WordPress. Trigger them from site events, webhooks or direct calls, and give them your site abilities and skills.|$description|g" {} +
 find . -name '*.bak' -delete
 
 # Rename plugin main file
-if [ -f "wp-agents.php" ]; then mv "wp-agents.php" "$slug.php"; fi
+if [ -f "agent-studio.php" ]; then mv "agent-studio.php" "$slug.php"; fi
 
 # Symlink CLAUDE.md -> AGENTS.md (replace placeholder file)
 if [ -L CLAUDE.md ]; then rm CLAUDE.md; fi

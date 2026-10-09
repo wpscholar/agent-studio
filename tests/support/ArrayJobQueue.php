@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Tests\Support;
+namespace AgentStudio\Tests\Support;
 
-use WPAgents\Contracts\JobQueue;
+use AgentStudio\Contracts\JobQueue;
 
 final class ArrayJobQueue implements JobQueue
 {

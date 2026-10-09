@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Domain\Agent;
+namespace AgentStudio\Domain\Agent;
 
 /**
  * An agent: instructions, what starts it, and what it is allowed to do.
@@ -18,8 +18,9 @@ final class Agent
 
     /**
      * @param list<Trigger> $triggers
-     * @param list<string>  $abilities Allowlist of ability names the agent may call.
-     * @param list<string>  $skills    Allowlist of skill slugs the agent may load.
+     * @param list<string>  $abilities  Allowlist of ability names the agent may call.
+     * @param list<string>  $skills     Allowlist of skill slugs the agent may load.
+     * @param string        $provider   AI provider ID for $model. Both empty means WordPress picks.
      */
     public function __construct(
         public readonly int $id,
@@ -35,6 +36,7 @@ final class Agent
         int $maxRunsPerHour = 30,
         public readonly string $model = '',
         public readonly string $webhookSecret = '',
+        public readonly string $provider = '',
     ) {
         $this->maxSteps = max(self::MIN_STEPS, min(self::MAX_STEPS, $maxSteps));
         $this->maxRunsPerHour = max(1, min(self::MAX_RUNS_PER_HOUR_LIMIT, $maxRunsPerHour));

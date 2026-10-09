@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace WPAgents\Infrastructure;
+namespace AgentStudio\Infrastructure;
 
-use WPAgents\Contracts\JobQueue;
+use AgentStudio\Contracts\JobQueue;
 
 /**
  * Runs agents in the background, so the request that triggered an agent
@@ -15,8 +15,8 @@ use WPAgents\Contracts\JobQueue;
  */
 final class WordPressJobQueue implements JobQueue
 {
-    public const HOOK = 'wpa_execute_run';
-    private const GROUP = 'wp-agents';
+    public const HOOK = 'agent_studio_execute_run';
+    private const GROUP = 'agent-studio';
 
     public function enqueueRun(int $runId): void
     {
