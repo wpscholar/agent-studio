@@ -28,6 +28,11 @@ final class WordPressChannelEndpoints implements ChannelEndpoints
         );
     }
 
+    public function authorizationReturn(): string
+    {
+        return admin_url('admin-post.php?action=agent_studio_channel_connected');
+    }
+
     public function siteName(): string
     {
         return wp_specialchars_decode((string) get_option('blogname'), ENT_QUOTES);

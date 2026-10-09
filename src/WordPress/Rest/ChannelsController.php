@@ -17,6 +17,8 @@ use AgentStudio\Application\Channels\InboundHandler;
 use AgentStudio\Contracts\AgentRepository;
 use AgentStudio\Contracts\ApprovalPolicy;
 use AgentStudio\Contracts\Channel\ChannelPhrases;
+use AgentStudio\Contracts\Channel\ChannelProblem;
+use AgentStudio\Contracts\Channel\GuidedSetup;
 use AgentStudio\Contracts\Channel\ChannelType;
 use AgentStudio\Contracts\Channel\InboundRequest;
 use AgentStudio\Contracts\Channel\OutgoingMessage;
@@ -29,7 +31,9 @@ use AgentStudio\Domain\Channel\Contact;
 use AgentStudio\Domain\Channel\ContactStatus;
 use AgentStudio\Domain\Run\RunStatus;
 use AgentStudio\Domain\Setup\SetupStep;
+use AgentStudio\WordPress\Admin\Flash;
 use AgentStudio\WordPress\Capabilities;
+use AgentStudio\WordPress\Urls;
 
 /**
  * The Channels screen's API, plus the two public addresses channels call.
@@ -43,6 +47,7 @@ use AgentStudio\WordPress\Capabilities;
  *   POST   /channels/{id}/activate|deactivate        Switch on or off.
  *   POST   /channels/{id}/test                       Send a test notification.
  *   POST   /channels/{id}/pairing                    A code that links your chat account to you.
+ *   POST   /channels/{id}/authorize                  Start connecting by signing in at the service (Slack).
  *   PUT    /channels/{id}/contacts/{contact}         Allow or block someone. Body: status.
  *   DELETE /channels/{id}/contacts/{contact}         Forget someone.
  *   POST   /channels/{id}/inbound                    Public: where the service sends messages. The type checks the signature.
@@ -65,9 +70,12 @@ final class ChannelsController
     ) {
     }
 
+    public const CONNECTED_ACTION = 'agent_studio_channel_connected';
+
     public function register(): void
     {
         add_action('rest_api_init', [$this, 'registerRoutes']);
+        add_action('admin_post_' . self::CONNECTED_ACTION, [$this, 'connected']);
     }
 
     public function registerRoutes(): void
@@ -89,6 +97,7 @@ final class ChannelsController
         register_rest_route($ns, $id . '/(?P<switch>activate|deactivate)', [['methods' => 'POST', 'callback' => [$this, 'toggle'], 'permission_callback' => $can]]);
         register_rest_route($ns, $id . '/test', [['methods' => 'POST', 'callback' => [$this, 'test'], 'permission_callback' => $can]]);
         register_rest_route($ns, $id . '/pairing', [['methods' => 'POST', 'callback' => [$this, 'pairing'], 'permission_callback' => $can]]);
+        register_rest_route($ns, $id . '/authorize', [['methods' => 'POST', 'callback' => [$this, 'authorize'], 'permission_callback' => $can]]);
         register_rest_route($ns, $id . '/contacts/(?P<contact>\d+)', [
             ['methods' => 'PUT', 'callback' => [$this, 'contact'], 'permission_callback' => $can],
             ['methods' => 'DELETE', 'callback' => [$this, 'forgetContact'], 'permission_callback' => $can],
@@ -106,6 +115,7 @@ final class ChannelsController
                 'description' => $type->description(),
                 'capabilities' => $type->capabilities()->toArray(),
                 'steps' => array_map(static fn (SetupStep $step): array => $step->toArray(), $type->setupSteps()),
+                'guided' => $type instanceof GuidedSetup,
             ],
             $this->types->all()
         ));
@@ -159,7 +169,8 @@ final class ChannelsController
             return self::error('agent_studio_channel_not_saved', $e->getMessage(), 500);
         }
 
-        return new WP_REST_Response($this->detail($this->service->activate($channel)), 201);
+        // Guided types finish setting up on the channel's page, so there is nothing to switch on yet.
+        return new WP_REST_Response($this->detail($type instanceof GuidedSetup ? $channel : $this->service->activate($channel)), 201);
     }
 
     /**
@@ -263,6 +274,62 @@ final class ChannelsController
         }
 
         return new WP_REST_Response($this->service->startPairing($channel, get_current_user_id()) + ['expiresIn' => ChannelService::PAIRING_TTL]);
+    }
+
+    /**
+     * @return WP_REST_Response|WP_Error
+     */
+    public function authorize(WP_REST_Request $request)
+    {
+        $channel = $this->find($request);
+        if ($channel instanceof WP_Error) {
+            return $channel;
+        }
+
+        try {
+            return new WP_REST_Response(['url' => $this->service->beginAuthorization($channel, get_current_user_id())]);
+        } catch (ChannelProblem $e) {
+            return self::error('agent_studio_channel_not_ready', $e->getMessage(), 409);
+        }
+    }
+
+    /**
+     * Where the person lands after approving the connection at the service.
+     */
+    public function connected(): void
+    {
+        if (! Capabilities::canManage()) {
+            wp_die(esc_html__('You are not allowed to do that.', 'agent-studio'), '', ['response' => 403]);
+        }
+
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- The state parameter is the CSRF check here.
+        $query = [];
+        foreach ($_GET as $key => $value) {
+            if (is_string($key) && is_string($value)) {
+                $query[sanitize_key($key)] = sanitize_text_field(wp_unslash($value));
+            }
+        }
+        // phpcs:enable
+
+        if (($query['error'] ?? '') !== '') {
+            Flash::redirect(Urls::channels(), 'error', sprintf(
+                /* translators: %s: error from the service */
+                __('Connecting did not finish: %s', 'agent-studio'),
+                $query['error']
+            ));
+        }
+
+        try {
+            $channel = $this->service->finishAuthorization($query['state'] ?? '', $query, get_current_user_id());
+        } catch (ChannelProblem $e) {
+            Flash::redirect(Urls::channels(), 'error', $e->getMessage());
+        }
+
+        Flash::redirect(
+            Urls::channel($channel->id),
+            $channel->isActive() ? 'success' : 'error',
+            $channel->isActive() ? __('Connected and switched on.', 'agent-studio') : $channel->message
+        );
     }
 
     /**
@@ -386,14 +453,26 @@ final class ChannelsController
         $secretInput = $request->get_param('secrets');
         $secretInput = is_array($secretInput) ? $secretInput : [];
 
+        // Steps on the channel's page (guided setup) are filled in later, so only the first page's fields are required.
+        $requiredKeys = [];
+        foreach ($type->setupSteps() as $step) {
+            foreach ($step->fields as $field) {
+                if ($field->required) {
+                    $requiredKeys[] = $field->key;
+                }
+            }
+        }
+
         $settings = $current?->settings ?? [];
         $secrets = [];
-        foreach ($this->service->fields($type) as $field) {
+        foreach ($this->service->fields($type, $current) as $field) {
+            $required = in_array($field->key, $requiredKeys, true);
+
             if ($field->isSecret()) {
                 $value = $field->clean($secretInput[$field->key] ?? '');
                 if ($value !== '') {
                     $secrets[$field->key] = $value;
-                } elseif ($field->required && $current === null) {
+                } elseif ($required && $current === null) {
                     return self::error('agent_studio_channel_invalid', sprintf(
                         /* translators: %s: field label */
                         __('Fill in “%s”.', 'agent-studio'),
@@ -403,10 +482,10 @@ final class ChannelsController
                 continue;
             }
 
-            if (array_key_exists($field->key, $input) || $current === null) {
+            if (array_key_exists($field->key, $input) || ($current === null && $field->default !== '')) {
                 $settings[$field->key] = $field->clean($input[$field->key] ?? $field->default);
             }
-            if ($field->required && ($settings[$field->key] ?? '') === '') {
+            if ($required && ($settings[$field->key] ?? '') === '') {
                 return self::error('agent_studio_channel_invalid', sprintf(
                     /* translators: %s: field label */
                     __('Fill in “%s”.', 'agent-studio'),
@@ -475,6 +554,8 @@ final class ChannelsController
             'settings' => $channel->settings,
             'savedSecrets' => $type === null ? [] : $this->service->savedSecrets($channel),
             'steps' => $type === null ? [] : array_map(static fn (SetupStep $step): array => $step->toArray(), $type->setupSteps()),
+            'guided' => $type instanceof GuidedSetup,
+            'followUp' => $type === null ? [] : array_map(static fn (SetupStep $step): array => $step->toArray(), $this->service->followUpSteps($channel)),
             'linkedToMe' => count(array_filter(
                 $this->contacts->forChannel($channel->id),
                 static fn (Contact $c): bool => $c->userId === $currentUser && $c->isAllowed()

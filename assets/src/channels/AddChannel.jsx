@@ -193,8 +193,10 @@ export default function AddChannel({ typeKey, navigate }) {
         <div className="agent-studio-form-actions">
           <Button variant="primary" type="submit" isBusy={busy} disabled={busy}>
             {busy
-              ? __('Switching on…', 'agent-studio')
-              : __('Save and switch on', 'agent-studio')}
+              ? __('Saving…', 'agent-studio')
+              : type.guided
+                ? __('Save and continue', 'agent-studio')
+                : __('Save and switch on', 'agent-studio')}
           </Button>
         </div>
       </form>

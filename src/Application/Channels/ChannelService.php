@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AgentStudio\Application\Channels;
 
+use AgentStudio\Contracts\Channel\AuthorizesWithOAuth;
 use AgentStudio\Contracts\Channel\ChannelContext;
 use AgentStudio\Contracts\Channel\ChannelEndpoints;
 use AgentStudio\Contracts\Channel\ChannelProblem;
 use AgentStudio\Contracts\Channel\ChannelType;
+use AgentStudio\Contracts\Channel\GuidedSetup;
 use AgentStudio\Contracts\Channel\OutgoingMessage;
 use AgentStudio\Contracts\ChannelRepository;
 use AgentStudio\Contracts\ContactRepository;
@@ -17,6 +19,7 @@ use AgentStudio\Contracts\SecretStore;
 use AgentStudio\Domain\Channel\Channel;
 use AgentStudio\Domain\Channel\ChannelStatus;
 use AgentStudio\Domain\Setup\SetupField;
+use AgentStudio\Domain\Setup\SetupStep;
 use RuntimeException;
 use Throwable;
 
@@ -49,14 +52,20 @@ final class ChannelService
     }
 
     /**
-     * Every setup field of the channel's type.
+     * Every setup field of the channel's type, including the steps shown after
+     * the channel is created when the type has them.
      *
      * @return list<SetupField>
      */
-    public function fields(ChannelType $type): array
+    public function fields(ChannelType $type, ?Channel $channel = null): array
     {
+        $steps = $type->setupSteps();
+        if ($channel !== null && $type instanceof GuidedSetup) {
+            $steps = array_merge($steps, $this->followUpSteps($channel));
+        }
+
         $fields = [];
-        foreach ($type->setupSteps() as $step) {
+        foreach ($steps as $step) {
             foreach ($step->fields as $field) {
                 $fields[] = $field;
             }
@@ -66,13 +75,70 @@ final class ChannelService
     }
 
     /**
+     * The steps still to do on the channel's page, for types that need the channel to exist first.
+     *
+     * @return list<SetupStep>
+     */
+    public function followUpSteps(Channel $channel): array
+    {
+        $type = $this->type($channel);
+
+        return $type instanceof GuidedSetup
+            ? $type->followUpSteps($channel, $this->endpoints->inbound($channel), $this->endpoints->authorizationReturn())
+            : [];
+    }
+
+    /**
+     * Starts connecting the channel by signing in at the service. Returns where to send the person.
+     */
+    public function beginAuthorization(Channel $channel, int $userId): string
+    {
+        $type = $this->type($channel);
+        if (! $type instanceof AuthorizesWithOAuth) {
+            throw new ChannelProblem('This kind of channel is not connected by signing in.');
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $this->pending->put('connect-' . $state, ['channel' => $channel->id, 'user' => $userId], self::PAIRING_TTL);
+
+        return $type->authorizationUrl($channel, $this->context($channel), $state);
+    }
+
+    /**
+     * Finishes connecting when the person comes back, then switches the channel on.
+     *
+     * @param array<string, string> $query
+     */
+    public function finishAuthorization(string $state, array $query, int $userId): Channel
+    {
+        $pending = $this->pending->take('connect-' . $state);
+        $channel = is_array($pending) && ($pending['user'] ?? null) === $userId ? $this->channels->find((int) ($pending['channel'] ?? 0)) : null;
+        if ($channel === null) {
+            throw new ChannelProblem('This connection link has expired or belongs to someone else. Start again from the channel’s page.');
+        }
+
+        $type = $this->type($channel);
+        if (! $type instanceof AuthorizesWithOAuth) {
+            throw new ChannelProblem('This kind of channel is not connected by signing in.');
+        }
+
+        $result = $type->completeAuthorization($channel, $this->context($channel), $query);
+        foreach ($result['secrets'] as $key => $value) {
+            $this->secrets->set(self::secretName($channel, $key), $value);
+        }
+        $channel = $this->channels->save($channel->with(['settings' => array_merge($channel->settings, $result['settings'])]));
+
+        return $this->activate($channel);
+    }
+
+    /**
      * Saves secret field values. Empty values keep what is saved.
      *
      * @param array<string, string> $values
      */
     public function saveSecrets(Channel $channel, array $values): void
     {
-        foreach ($this->fields($this->type($channel)) as $field) {
+        foreach ($this->fields($this->type($channel), $channel) as $field) {
             $value = $values[$field->key] ?? '';
             if ($field->isSecret() && $value !== '') {
                 $this->secrets->set(self::secretName($channel, $field->key), $value);
@@ -92,7 +158,12 @@ final class ChannelService
 
     public function context(Channel $channel): ChannelContext
     {
-        return new ChannelContext($this->secretValues($channel), $this->endpoints->inbound($channel), $this->endpoints->siteName());
+        return new ChannelContext(
+            $this->secretValues($channel),
+            $this->endpoints->inbound($channel),
+            $this->endpoints->siteName(),
+            $this->endpoints->authorizationReturn()
+        );
     }
 
     /**
@@ -133,8 +204,8 @@ final class ChannelService
         }
 
         try {
-            foreach ($this->fields($this->type($channel)) as $field) {
-                $this->secrets->delete(self::secretName($channel, $field->key));
+            foreach ($this->secretKeys($channel) as $key) {
+                $this->secrets->delete(self::secretName($channel, $key));
             }
         } catch (ChannelProblem) {
             // The type's plugin is gone; its secrets cannot be listed. They stay unreadable without it.
@@ -195,17 +266,30 @@ final class ChannelService
     private function secretValues(Channel $channel): array
     {
         $values = [];
-        foreach ($this->fields($this->type($channel)) as $field) {
-            if (! $field->isSecret()) {
-                continue;
-            }
-            $value = $this->secrets->get(self::secretName($channel, $field->key));
+        foreach ($this->secretKeys($channel) as $key) {
+            $value = $this->secrets->get(self::secretName($channel, $key));
             if ($value !== null) {
-                $values[$field->key] = $value;
+                $values[$key] = $value;
             }
         }
 
         return $values;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function secretKeys(Channel $channel): array
+    {
+        $type = $this->type($channel);
+        $keys = [];
+        foreach ($this->fields($type, $channel) as $field) {
+            if ($field->isSecret()) {
+                $keys[] = $field->key;
+            }
+        }
+
+        return array_values(array_unique(array_merge($keys, $type instanceof AuthorizesWithOAuth ? $type->authorizationSecrets() : [])));
     }
 
     private static function secretName(Channel $channel, string $key): string

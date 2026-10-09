@@ -644,3 +644,9 @@
 .agent-studio-people .agent-studio-button-row {
   margin-top: 0;
 }
+.agent-studio-step.is-done .agent-studio-step-number {
+  background: #00a32a;
+}
+.agent-studio-step.is-done h2 {
+  color: #50575e;
+}

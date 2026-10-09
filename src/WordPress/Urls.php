@@ -66,6 +66,11 @@ final class Urls
         return admin_url('edit.php?post_type=' . PostTypes::AGENT . '&page=agent-studio-channels');
     }
 
+    public static function channel(int $channelId): string
+    {
+        return add_query_arg('channel', $channelId, self::channels());
+    }
+
     public static function webhook(int $agentId): string
     {
         return rest_url('agent-studio/v1/webhooks/' . $agentId);

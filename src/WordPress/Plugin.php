@@ -24,6 +24,7 @@ use AgentStudio\Infrastructure\WpdbContactRepository;
 use AgentStudio\Infrastructure\WpdbConversationRepository;
 use AgentStudio\WordPress\Channels\ChannelPhrases;
 use AgentStudio\WordPress\Channels\NtfyChannelType;
+use AgentStudio\WordPress\Channels\SlackChannelType;
 use AgentStudio\WordPress\Channels\TelegramChannelType;
 use AgentStudio\WordPress\Channels\WordPressChannelEndpoints;
 use AgentStudio\WordPress\Rest\ChannelsController;
@@ -207,6 +208,7 @@ final class Plugin
             ChannelTypes::class,
             static function (Container $c): ChannelTypes {
                 $types = new ChannelTypes();
+                $types->register(new SlackChannelType($c->get(HttpClient::class)));
                 $types->register(new TelegramChannelType($c->get(HttpClient::class)));
                 $types->register(new NtfyChannelType($c->get(HttpClient::class)));
 
