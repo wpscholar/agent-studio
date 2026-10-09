@@ -51,6 +51,13 @@ Gutenberg is experimenting with a `wp_knowledge` post type, typed by a `wp_knowl
 - `WordPressSkillRepository` reads only the `skill` type. If core ships Knowledge, a second `SkillRepository` adapter can read it instead.
 - The stock post screens are hidden for knowledge (`show_ui` false). People use Agents → Skills, which explains the fields in plain language.
 
+## Agents screen
+
+- Agents stay a post type (`agent_studio_agent`): title is the name, content the instructions, settings JSON in post meta. The **post status is the agent's status**: `draft` (being set up), `publish` (active), and the registered `agent_studio_paused`. `Infrastructure\AgentPostStatus` maps between them; content version 3 moved the old `status` setting into the post status.
+- The stock list and editor are replaced by the React Agents screen (`assets/src/agents`), backed by `Rest\AgentsController`. `Admin\OldScreens` redirects old links (`edit.php`, `post.php`, `post-new.php`, and the old `edit.php?page=…` addresses) to the new screens.
+- Lists that can grow without limit (triggers, abilities) are searched and paged on the server by `Rest\CatalogController` (`/triggers`, `/abilities`). The screen never loads the full list.
+- `Agents\Readiness` checks the site on each request; nothing about it is cached.
+
 ## Connections (Agent Studio as an MCP client)
 
 - `Domain\Connection\Connection` is a service agents can use. Its non-secret settings, status and last-known tools are JSON in post meta on the private `agent_studio_conn` post type. Secrets never go there: they go through `Contracts\SecretStore`.

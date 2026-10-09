@@ -12,6 +12,12 @@ final class PostTypes
     public const AGENT = 'agent_studio_agent';
 
     /**
+     * An agent's state is its post status: draft while being set up, publish when
+     * active, and this custom status when paused. Post statuses are limited to 20 characters.
+     */
+    public const STATUS_PAUSED = 'agent_studio_paused';
+
+    /**
      * Knowledge: skills now, memories and notes later. Same shape as the
      * `wp_knowledge` post type Gutenberg is experimenting with (title, excerpt
      * as the description, content, revisions, typed by a taxonomy), so it can

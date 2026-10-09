@@ -15,6 +15,8 @@ use AgentStudio\Domain\Agent\TriggerType;
 /**
  * Converts between an agent's stored configuration (a JSON array in post meta)
  * and the Agent object, and cleans configuration coming from forms or imports.
+ *
+ * The status is not part of the configuration: it is the post status (see AgentPostStatus).
  */
 final class AgentConfigMapper
 {
@@ -24,7 +26,6 @@ final class AgentConfigMapper
     public static function defaults(): array
     {
         return [
-            'status' => AgentStatus::Paused->value,
             'triggers' => [],
             'abilities' => [],
             'skills' => [],
@@ -62,7 +63,6 @@ final class AgentConfigMapper
         }
 
         return [
-            'status' => AgentStatus::fromString(self::string($config['status']))->value,
             'triggers' => $triggers,
             'abilities' => self::slugs($config['abilities'], '/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.\/-]*$/'),
             'skills' => self::slugs($config['skills'], '/^[a-z0-9][a-z0-9-]{0,63}$/'),
@@ -79,8 +79,14 @@ final class AgentConfigMapper
     /**
      * @param array<string, mixed> $config
      */
-    public static function toAgent(int $id, string $name, string $instructions, array $config, int $ownerId = 0): Agent
-    {
+    public static function toAgent(
+        int $id,
+        string $name,
+        string $instructions,
+        array $config,
+        int $ownerId = 0,
+        AgentStatus $status = AgentStatus::Draft,
+    ): Agent {
         $config = self::normalize($config);
 
         $triggers = [];
@@ -95,7 +101,7 @@ final class AgentConfigMapper
             $id,
             $name,
             $instructions,
-            AgentStatus::fromString($config['status']),
+            $status,
             $triggers,
             $config['abilities'],
             $config['skills'],

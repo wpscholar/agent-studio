@@ -2,27 +2,18 @@
 
 declare(strict_types=1);
 
-namespace AgentStudio\WordPress\Admin;
-
-use AgentStudio\Infrastructure\AgentConfigMapper;
-use AgentStudio\Infrastructure\PostTypes;
-use AgentStudio\WordPress\Capabilities;
-use AgentStudio\WordPress\Urls;
+namespace AgentStudio\WordPress;
 
 /**
- * Ready-made agents to start from. Each one is created paused so nothing runs until you say so.
+ * Ready-made agents to start from, offered when you add an agent. Each one is
+ * created as a draft so nothing runs until someone reads it and switches it on.
  */
-final class TemplatesPage
+final class AgentTemplates
 {
-    public function register(): void
-    {
-        add_action('admin_post_agent_studio_create_from_template', [$this, 'create']);
-    }
-
     /**
      * @return array<string, array{title: string, summary: string, instructions: string, config: array<string, mixed>}>
      */
-    public static function templates(): array
+    public static function all(): array
     {
         $templates = [
             'pre-publish-reviewer' => [
@@ -62,7 +53,7 @@ final class TemplatesPage
         ];
 
         /**
-         * Filters the agent templates offered on the Templates page.
+         * Filters the agent templates offered when someone adds an agent.
          *
          * @param array<string, array<string, mixed>> $templates Templates keyed by slug.
          */
@@ -93,67 +84,5 @@ final class TemplatesPage
         }
 
         return $valid;
-    }
-
-    public function create(): void
-    {
-        if (! Capabilities::canManage()) {
-            wp_die(esc_html__('You are not allowed to do that.', 'agent-studio'), '', ['response' => 403]);
-        }
-
-        check_admin_referer('agent_studio_create_from_template');
-
-        $key = isset($_POST['template']) ? sanitize_key(wp_unslash($_POST['template'])) : '';
-        $template = self::templates()[$key] ?? null;
-        if ($template === null) {
-            Flash::redirect(Urls::templates(), 'error', __('That template does not exist.', 'agent-studio'));
-        }
-
-        $postId = wp_insert_post(
-            [
-                'post_type' => PostTypes::AGENT,
-                'post_status' => 'publish',
-                'post_title' => $template['title'],
-                'post_content' => wp_slash($template['instructions']),
-            ],
-            true
-        );
-
-        if (is_wp_error($postId)) {
-            Flash::redirect(Urls::templates(), 'error', $postId->get_error_message());
-        }
-
-        AgentConfigMapper::write(
-            $postId,
-            array_merge($template['config'], ['status' => 'paused', 'run_as' => get_current_user_id()])
-        );
-
-        Flash::redirect(
-            Urls::editAgent($postId),
-            'success',
-            __('Agent created and paused. Read the instructions, then set it to Active when you are ready.', 'agent-studio')
-        );
-    }
-
-    public function render(): void
-    {
-        if (! Capabilities::canManage()) {
-            wp_die(esc_html__('You are not allowed to see this page.', 'agent-studio'), '', ['response' => 403]);
-        }
-
-        echo '<div class="wrap agent-studio-wrap"><h1>' . esc_html__('Agent templates', 'agent-studio') . '</h1>';
-        Flash::render();
-        echo '<p>' . esc_html__('Start from a working example and change it to fit your site. Every template is created paused.', 'agent-studio') . '</p><div class="agent-studio-cards">';
-
-        foreach (self::templates() as $key => $template) {
-            echo '<div class="agent-studio-card"><h2>' . esc_html($template['title']) . '</h2><p>' . esc_html($template['summary']) . '</p>';
-            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
-            wp_nonce_field('agent_studio_create_from_template');
-            echo '<input type="hidden" name="action" value="agent_studio_create_from_template"><input type="hidden" name="template" value="' . esc_attr((string) $key) . '">';
-            submit_button(__('Use this template', 'agent-studio'), 'primary', 'submit', false);
-            echo '</form></div>';
-        }
-
-        echo '</div></div>';
     }
 }

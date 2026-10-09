@@ -8,8 +8,6 @@ use AgentStudio\Application\Triggers\TriggerDefinitions;
 use AgentStudio\Domain\Agent\TriggerType;
 use AgentStudio\Infrastructure\AgentConfigMapper;
 use AgentStudio\Tests\Support\OrderPlacedTrigger;
-use AgentStudio\WordPress\Admin\AgentEditor;
-use AgentStudio\WordPress\Admin\TemplatesPage;
 use AgentStudio\WordPress\Plugin;
 
 final class CustomTriggersTest extends IntegrationTestCase
@@ -48,29 +46,27 @@ final class CustomTriggersTest extends IntegrationTestCase
         $this->assertSame([], $this->runs->recent(10, 0, $id));
     }
 
-    public function test_the_editor_shows_plugin_events_with_their_fields_and_saves_them(): void
+    public function test_plugin_events_are_offered_with_their_fields_and_saved(): void
     {
-        $id = $this->createAgent([]);
-        $editor = Plugin::container()->get(AgentEditor::class);
+        $found = $this->rest('GET', 'triggers', ['search' => 'order'])->get_data()['items'];
+        $this->assertSame('custom:test-shop/order-placed', $found[0]['key']);
+        $this->assertSame('min_total', $found[0]['fields'][0]['key']);
+        $this->assertSame('Test shop', $found[0]['group']);
 
-        ob_start();
-        $editor->triggersBox(get_post($id));
-        $html = (string) ob_get_clean();
-        $this->assertStringContainsString('An order is placed', $html);
-        $this->assertStringContainsString('name="agent_studio[triggers][custom:test-shop/order-placed][min_total]"', $html);
-
-        $_POST = ['agent_studio_nonce' => wp_create_nonce('agent_studio_save_agent_' . $id), 'agent_studio' => [
+        $agent = $this->rest('POST', 'agents', [
+            'name' => 'Orders',
+            'instructions' => 'Thank people.',
             'status' => 'active',
             'triggers' => [
-                'custom:test-shop/order-placed' => ['on' => '1', 'min_total' => '50'],
-                'post_status' => ['on' => '1'],
+                ['key' => 'custom:test-shop/order-placed', 'config' => ['min_total' => '50', 'not_a_field' => 'x']],
+                ['key' => 'post_status', 'config' => []],
             ],
-        ]];
-        $editor->save($id, get_post($id));
+        ])->get_data();
 
-        $triggers = AgentConfigMapper::normalize(AgentConfigMapper::read($id))['triggers'];
+        $triggers = AgentConfigMapper::normalize(AgentConfigMapper::read($agent['id']))['triggers'];
         $this->assertContains(['type' => 'custom', 'config' => ['kind' => 'test-shop/order-placed', 'min_total' => '50']], $triggers);
         $this->assertCount(2, $triggers);
+        $this->assertSame('An order is placed', $agent['triggerTypes']->{'custom:test-shop/order-placed'}['label']);
     }
 
     public function test_a_plugin_template_can_use_a_plugin_trigger(): void
@@ -85,14 +81,11 @@ final class CustomTriggersTest extends IntegrationTestCase
 
             return $templates;
         });
-        $_POST = $_REQUEST = ['template' => 'big-order-thanks', '_wpnonce' => wp_create_nonce('agent_studio_create_from_template')];
-
-        $this->redirectOf(static fn () => Plugin::container()->get(TemplatesPage::class)->create());
-
-        $agents = array_values(array_filter((new \AgentStudio\Infrastructure\WordPressAgentRepository())->all(), static fn ($a): bool => $a->name === 'Big order thank-you'));
-        $this->assertSame('test-shop/order-placed', $agents[0]->triggers[0]->kind());
-        $this->assertSame('500', $agents[0]->triggers[0]->config['min_total']);
-        $this->assertFalse($agents[0]->isActive(), 'Templates create paused agents.');
+        $agent = $this->rest('GET', 'agents/new', ['template' => 'big-order-thanks'])->get_data();
         remove_all_filters('agent_studio_agent_templates');
+
+        $this->assertSame('draft', $agent['status'], 'Templates start as drafts.');
+        $this->assertSame('custom:test-shop/order-placed', $agent['triggers'][0]['key']);
+        $this->assertSame('500', $agent['triggers'][0]['config']->min_total);
     }
 }

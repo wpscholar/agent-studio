@@ -83,18 +83,20 @@ use AgentStudio\Infrastructure\WordPressSkillRepository;
 use AgentStudio\Infrastructure\WpdbRunRepository;
 use AgentStudio\WordPress\Abilities\AgentAbilities;
 use AgentStudio\WordPress\Abilities\StarterAbilities;
-use AgentStudio\WordPress\Admin\AbilitiesPage;
-use AgentStudio\WordPress\Admin\AgentEditor;
+use AgentStudio\WordPress\Admin\OldScreens;
 use AgentStudio\WordPress\Admin\Assets;
 use AgentStudio\WordPress\Admin\Menu;
 use AgentStudio\WordPress\Admin\PostNotes;
 use AgentStudio\WordPress\Admin\RunsPage;
-use AgentStudio\WordPress\Admin\TemplatesPage;
 use AgentStudio\WordPress\Cli\AgentsCommand;
 use AgentStudio\WordPress\Hooks\ScheduleHooks;
 use AgentStudio\WordPress\Hooks\TriggerHooks;
 use AgentStudio\WordPress\Hooks\WorkerHooks;
+use AgentStudio\WordPress\Agents\AbilityCatalog;
+use AgentStudio\WordPress\Agents\Readiness;
+use AgentStudio\WordPress\Agents\TriggerCatalog;
 use AgentStudio\WordPress\Rest\AgentsController;
+use AgentStudio\WordPress\Rest\CatalogController;
 use AgentStudio\WordPress\Rest\SkillsController;
 use AgentStudio\WordPress\Rest\WebhookController;
 
@@ -119,6 +121,7 @@ final class Plugin
         $container->get(ScheduleHooks::class)->register();
         $container->get(WebhookController::class)->register();
         $container->get(AgentsController::class)->register();
+        $container->get(CatalogController::class)->register();
         $container->get(SkillsController::class)->register();
         $container->get(ConnectionsController::class)->register();
         $container->get(ChannelsController::class)->register();
@@ -129,9 +132,8 @@ final class Plugin
         if (is_admin()) {
             $container->get(Assets::class)->register();
             $container->get(Menu::class)->register();
-            $container->get(AgentEditor::class)->register();
+            $container->get(OldScreens::class)->register();
             $container->get(RunsPage::class)->register();
-            $container->get(TemplatesPage::class)->register();
             $container->get(PostNotes::class)->register();
         }
 
@@ -539,7 +541,28 @@ final class Plugin
             static fn (Container $c): AgentsController => new AgentsController(
                 $c->get(AgentRepository::class),
                 $c->get(RunRepository::class),
-                $c->get(DispatchTriggerHandler::class)
+                $c->get(DispatchTriggerHandler::class),
+                $c->get(SkillRepository::class),
+                $c->get(AbilityCatalog::class),
+                $c->get(TriggerCatalog::class),
+                $c->get(TriggerDefinitions::class)
+            )
+        );
+        $c->set(
+            TriggerCatalog::class,
+            static fn (Container $c): TriggerCatalog => new TriggerCatalog($c->get(TriggerDefinitions::class))
+        );
+        $c->set(
+            AbilityCatalog::class,
+            static fn (Container $c): AbilityCatalog => new AbilityCatalog($c->get(AbilityGateway::class), $c->get(AgentRepository::class))
+        );
+        $c->set(
+            CatalogController::class,
+            static fn (Container $c): CatalogController => new CatalogController(
+                $c->get(TriggerCatalog::class),
+                $c->get(AbilityCatalog::class),
+                new AiModelCatalog(),
+                new Readiness(static fn (): array => (new AiModelCatalog())->providers())
             )
         );
         $c->set(
@@ -563,11 +586,7 @@ final class Plugin
 
         $c->set(Assets::class, static fn (): Assets => new Assets());
         $c->set(PostNotes::class, static fn (): PostNotes => new PostNotes());
-        $c->set(TemplatesPage::class, static fn (): TemplatesPage => new TemplatesPage());
-        $c->set(
-            AbilitiesPage::class,
-            static fn (Container $c): AbilitiesPage => new AbilitiesPage($c->get(AbilityGateway::class))
-        );
+        $c->set(OldScreens::class, static fn (): OldScreens => new OldScreens());
         $c->set(
             RunsPage::class,
             static fn (Container $c): RunsPage => new RunsPage(
@@ -579,22 +598,7 @@ final class Plugin
         );
         $c->set(
             Menu::class,
-            static fn (Container $c): Menu => new Menu(
-                $c->get(RunsPage::class),
-                $c->get(AbilitiesPage::class),
-                $c->get(TemplatesPage::class)
-            )
-        );
-        $c->set(
-            AgentEditor::class,
-            static fn (Container $c): AgentEditor => new AgentEditor(
-                $c->get(AgentRepository::class),
-                $c->get(RunRepository::class),
-                $c->get(SkillRepository::class),
-                $c->get(AbilityGateway::class),
-                new AiModelCatalog(),
-                $c->get(TriggerDefinitions::class)
-            )
+            static fn (Container $c): Menu => new Menu($c->get(RunsPage::class))
         );
         $c->set(
             AgentsCommand::class,

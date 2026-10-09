@@ -52,24 +52,22 @@ final class Assets
             [
                 'restRoot' => esc_url_raw(rest_url('agent-studio/v1/')),
                 'nonce' => wp_create_nonce('wp_rest'),
-                'runUrl' => esc_url_raw(Urls::runs() . '&run='),
                 'urls' => [
                     'agents' => esc_url_raw(Urls::agents()),
-                    'newAgent' => esc_url_raw(admin_url('post-new.php?post_type=' . PostTypes::AGENT)),
+                    'newAgent' => esc_url_raw(Urls::newAgent()),
                     'skills' => esc_url_raw(Urls::skills()),
+                    'connections' => esc_url_raw(Urls::connections()),
+                    'channels' => esc_url_raw(Urls::channels()),
+                    'abilities' => esc_url_raw(Urls::abilities()),
                     'runs' => esc_url_raw(Urls::runs()),
+                    'connectors' => esc_url_raw(admin_url('options-connectors.php')),
+                    'timezone' => esc_url_raw(admin_url('options-general.php')),
                 ],
                 'can' => [
                     'manage' => Capabilities::canManage(),
                 ],
-                'i18n' => [
-                    'running' => __('Starting…', 'agent-studio'),
-                    'queued' => __('Queued. Waiting for the run to finish…', 'agent-studio'),
-                    'viewRun' => __('View run', 'agent-studio'),
-                    'failed' => __('The agent could not be started.', 'agent-studio'),
-                    'copied' => __('Copied', 'agent-studio'),
-                    'saveFirst' => __('Save the agent before running it.', 'agent-studio'),
-                ],
+                'userId' => get_current_user_id(),
+                'timezone' => self::timezone(),
             ]
         );
     }
@@ -81,7 +79,17 @@ final class Assets
 
     private static function isOurs(string $screenId, string $postType): bool
     {
-        return $postType === PostTypes::AGENT || str_contains($screenId, 'agent-studio-');
+        return $postType === PostTypes::AGENT || str_contains($screenId, 'agent-studio');
+    }
+
+    /**
+     * The site's timezone for people: "Europe/London", or "UTC+02:00" for sites set to a plain offset.
+     */
+    private static function timezone(): string
+    {
+        $zone = wp_timezone_string();
+
+        return preg_match('/^[+-]/', $zone) === 1 ? 'UTC' . $zone : $zone;
     }
 
     /**
