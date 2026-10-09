@@ -65,7 +65,10 @@ final class DispatchTriggerHandler
         $manual = $event->type === TriggerType::Manual;
 
         // Manual runs are explicit requests, so they ignore status and filters.
-        if (! $manual && (! $agent->isActive() || ! $agent->matches($event))) {
+        // Messages come through a channel set up for this agent, so there is no
+        // trigger to match, but a paused agent does not answer.
+        $matches = $event->type === TriggerType::Message || $agent->matches($event);
+        if (! $manual && (! $agent->isActive() || ! $matches)) {
             return new AgentDispatch($agent->id, DispatchOutcome::Skipped);
         }
 

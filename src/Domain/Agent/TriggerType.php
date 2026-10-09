@@ -23,4 +23,7 @@ enum TriggerType: string
 
     /** A person or script started the agent directly. */
     case Manual = 'manual';
+
+    /** Someone sent the agent a message through a channel, such as Telegram. */
+    case Message = 'message';
 }

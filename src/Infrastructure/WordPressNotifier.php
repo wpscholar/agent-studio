@@ -10,7 +10,8 @@ use AgentStudio\Domain\Run\PendingApproval;
 use AgentStudio\Domain\Run\Run;
 
 /**
- * Emails the site administrator when an agent needs approval.
+ * Emails the site administrator, and the person who set the agent up, when
+ * an agent needs approval.
  */
 final class WordPressNotifier implements Notifier
 {
@@ -19,7 +20,7 @@ final class WordPressNotifier implements Notifier
         /**
          * Filters who is emailed when an agent needs approval.
          *
-         * Return an empty string to turn the email off.
+         * Return an empty string to turn the email off (also for the agent's owner, who is otherwise emailed too).
          *
          * @param string $email Recipient. Default the site admin email.
          * @param Agent  $agent The agent.
@@ -27,7 +28,19 @@ final class WordPressNotifier implements Notifier
          */
         $to = apply_filters('agent_studio_approval_notify_email', get_option('admin_email'), $agent, $run);
 
-        if (! is_string($to) || ! is_email($to)) {
+        if ($to === '') {
+            return;
+        }
+
+        $recipients = is_string($to) && is_email($to) ? [$to] : [];
+
+        $owner = $agent->ownerId > 0 ? get_userdata($agent->ownerId) : false;
+        if ($owner !== false && is_email($owner->user_email) && \AgentStudio\WordPress\Capabilities::canApprove($agent, $owner->ID)) {
+            $recipients[] = $owner->user_email;
+        }
+
+        $recipients = array_values(array_unique(array_map('strtolower', $recipients)));
+        if ($recipients === []) {
             return;
         }
 
@@ -43,6 +56,6 @@ final class WordPressNotifier implements Notifier
             $link
         );
 
-        wp_mail($to, $subject, $body);
+        wp_mail($recipients, $subject, $body);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AgentStudio\Application\Execute;
 
 use Throwable;
+use AgentStudio\Application\Conversations\ConversationService;
 use AgentStudio\Application\Prompt\PromptBuilder;
 use AgentStudio\Contracts\AgentRepository;
 use AgentStudio\Contracts\Clock;
@@ -14,6 +15,7 @@ use AgentStudio\Contracts\Model\ModelRequest;
 use AgentStudio\Contracts\ModelClient;
 use AgentStudio\Contracts\Notifier;
 use AgentStudio\Contracts\RecursionGuard;
+use AgentStudio\Contracts\RunObserver;
 use AgentStudio\Contracts\RunRepository;
 use AgentStudio\Domain\Agent\Agent;
 use AgentStudio\Domain\Agent\TriggerType;
@@ -21,6 +23,7 @@ use AgentStudio\Domain\Conversation\Message;
 use AgentStudio\Domain\Conversation\Transcript;
 use AgentStudio\Domain\Run\PendingApproval;
 use AgentStudio\Domain\Run\Run;
+use AgentStudio\Domain\Run\RunStatus;
 use AgentStudio\Domain\Run\StepKind;
 
 /**
@@ -47,6 +50,8 @@ final class ExecuteRunHandler
         private readonly Identity $identity,
         private readonly RecursionGuard $guard,
         private readonly Clock $clock,
+        private readonly ?ConversationService $conversations = null,
+        private readonly ?RunObserver $observer = null,
     ) {
     }
 
@@ -78,15 +83,27 @@ final class ExecuteRunHandler
         }
 
         $this->runs->save($run);
+
+        if ($this->observer !== null && ($run->status()->isTerminal() || $run->status() === RunStatus::AwaitingApproval)) {
+            try {
+                $this->observer->runStopped($run);
+            } catch (Throwable) {
+                // Telling others about the run must never change its outcome.
+            }
+        }
     }
 
     private function loop(Run $run, Agent $agent): void
     {
         $registry = $this->registries->forAgent($agent);
-        $system = $this->prompts->system($agent, $registry->skills());
+        $conversation = $this->conversations?->transcript($run);
+        $channel = $conversation === null ? '' : (string) ($run->input()['channel'] ?? 'chat');
+        $system = $this->prompts->system($agent, $registry->skills(), $channel !== '' ? $channel : '');
 
         if ($run->transcript() === []) {
-            $run->appendMessage(Message::user($this->prompts->triggerMessage($run)));
+            foreach ($conversation ?? [Message::user($this->prompts->triggerMessage($run))] as $message) {
+                $run->appendMessage($message);
+            }
         }
 
         while (true) {

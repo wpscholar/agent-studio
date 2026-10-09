@@ -39,7 +39,7 @@ final class Trigger
                 && $this->listAllows('from', self::string($payload['old_status'] ?? '')),
             TriggerType::UserRegistered => $this->listAllowsAny('roles', self::strings($payload['roles'] ?? [])),
             TriggerType::CommentPosted => $this->listAllows('post_types', self::string($payload['post_type'] ?? '')),
-            TriggerType::Schedule, TriggerType::Webhook, TriggerType::Manual => true,
+            TriggerType::Schedule, TriggerType::Webhook, TriggerType::Manual, TriggerType::Message => true,
         };
     }
 
