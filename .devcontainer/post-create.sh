@@ -7,6 +7,12 @@ set -euo pipefail
 
 cd /workspace
 
+# node_modules is a named volume created for the image's vscode user. In CI the
+# devcontainer CLI changes vscode's UID to match the runner, so take it over.
+if [ ! -w node_modules ]; then
+  sudo chown "$(id -u):$(id -g)" node_modules
+fi
+
 composer install --prefer-dist --no-interaction
 npm ci
 
