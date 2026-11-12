@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Studio for WordPress</title>
+<meta name="description" content="Build AI agents inside WordPress. Trigger them from site events, webhooks, schedules or chat, give them your site's abilities, and approve anything that changes your site.">
+<meta property="og:title" content="Agent Studio for WordPress">
+<meta property="og:description" content="Build AI agents inside WordPress that run on your own site and ask before they change anything.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233858e9'/%3E%3Cpath d='M9 22l7-13 7 13M12 17h8' stroke='white' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --surface-2: #f2f3f7;
+  --text: #16181d;
+  --muted: #5a6070;
+  --border: #e3e5ec;
+  --accent: #3858e9;
+  --accent-strong: #2440c4;
+  --accent-soft: #eef1fe;
+  --on-accent: #ffffff;
+  --code-bg: #14161b;
+  --code-text: #e8eaf0;
+  --ok: #1a7f4b;
+  --warn: #a35a00;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 8px 24px rgba(16, 24, 40, .06);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1015;
+    --surface: #161922;
+    --surface-2: #1c2030;
+    --text: #eceef4;
+    --muted: #a2a8b8;
+    --border: #2a2f3d;
+    --accent: #7b93ff;
+    --accent-strong: #9aacff;
+    --accent-soft: #1d2440;
+    --on-accent: #0b0f1f;
+    --code-bg: #0a0c10;
+    --code-text: #e8eaf0;
+    --ok: #55c98b;
+    --warn: #f0a945;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+a:hover { color: var(--accent-strong); }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; }
+:not(pre) > code { background: var(--surface-2); border: 1px solid var(--border); padding: .1em .4em; border-radius: 6px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .wrap { padding: 0 16px; } }
+
+/* Header */
+header.site {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -.01em; }
+.brand svg { flex: none; }
+nav.site { display: flex; gap: 22px; font-size: .94rem; }
+nav.site a { color: var(--muted); text-decoration: none; }
+nav.site a:hover { color: var(--text); }
+@media (max-width: 720px) { nav.site .optional { display: none; } }
+
+/* Hero */
+.hero { padding-top: 88px; padding-bottom: 64px; text-align: center; }
+@media (max-width: 600px) { .hero { padding-top: 56px; } }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: .85rem; font-weight: 600; color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 5px 14px; margin-bottom: 22px;
+}
+.hero h1 { font-size: clamp(2.3rem, 6vw, 3.9rem); line-height: 1.07; letter-spacing: -.035em; margin: 0 auto 20px; max-width: 14ch; }
+.hero p.lede { font-size: clamp(1.06rem, 2.2vw, 1.25rem); color: var(--muted); max-width: 640px; margin: 0 auto 34px; }
+.actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 22px; border-radius: 10px; font-weight: 600; text-decoration: none;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.btn:hover { transform: translateY(-1px); color: var(--text); border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--shadow); }
+.btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
+.release-note { margin-top: 16px; font-size: .9rem; color: var(--muted); min-height: 1.5em; }
+.reqs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 30px; padding: 0; list-style: none; }
+.reqs li { font-size: .88rem; color: var(--muted); border: 1px solid var(--border); background: var(--surface); padding: 5px 12px; border-radius: 999px; }
+
+/* Sections */
+section { padding: 72px 0; }
+section.alt { background: var(--surface-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.section-head { max-width: 680px; margin-bottom: 40px; }
+.section-head h2 { font-size: clamp(1.7rem, 3.6vw, 2.3rem); letter-spacing: -.025em; line-height: 1.15; margin: 0 0 12px; }
+.section-head p { color: var(--muted); margin: 0; font-size: 1.06rem; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+.card h3 { margin: 12px 0 6px; font-size: 1.08rem; letter-spacing: -.01em; }
+.card p { margin: 0; color: var(--muted); font-size: .97rem; }
+.icon {
+  width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent);
+}
+
+/* Steps */
+ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 14px; }
+ol.steps li {
+  counter-increment: step; position: relative;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 22px 18px 72px;
+}
+ol.steps li::before {
+  content: counter(step); position: absolute; left: 20px; top: 16px;
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  font-weight: 700; background: var(--accent); color: var(--on-accent);
+}
+ol.steps strong { display: block; margin-bottom: 2px; }
+ol.steps span { color: var(--muted); font-size: .97rem; }
+
+/* Safety */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+@media (max-width: 860px) { .two-col { grid-template-columns: 1fr; gap: 28px; } }
+ul.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+ul.checks li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; }
+ul.checks svg { color: var(--ok); margin-top: 3px; }
+ul.checks strong { display: block; }
+ul.checks span { color: var(--muted); font-size: .97rem; }
+
+/* Install */
+.install { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.install .card h3 { margin-top: 0; }
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  padding: 14px 16px; border-radius: 10px; overflow-x: auto; margin: 12px 0 0; line-height: 1.5;
+  max-width: 100%;
+}
+pre.wrap-code { white-space: pre-wrap; word-break: break-all; }
+.note { margin-top: 28px; padding: 16px 20px; border-radius: var(--radius); background: var(--accent-soft); color: var(--text); font-size: .97rem; }
+
+/* Footer */
+footer.site { padding: 40px 0 56px; color: var(--muted); font-size: .92rem; }
+footer.site .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+footer.site a { color: var(--muted); }
+footer.site nav { display: flex; gap: 18px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Agent Studio home">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M9 22l7-13 7 13M12 17h8" stroke="var(--on-accent)" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Agent Studio
+    </a>
+    <nav class="site" aria-label="Sections">
+      <a class="optional" href="#features">Features</a>
+      <a class="optional" href="#how">How it works</a>
+      <a class="optional" href="#safety">Safety</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/wpscholar/agent-studio">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <span class="eyebrow">A WordPress plugin · Free and open source</span>
+    <h1>Build AI agents inside WordPress</h1>
+    <p class="lede">An agent is a set of instructions, something that starts it, and a short list of things it's allowed to do. It runs in the background on your own site and asks you before it changes anything you didn't pre-approve.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/wpscholar/agent-studio/releases/latest/download/agent-studio.zip">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 20h16"/></svg>
+        Download the plugin
+      </a>
+      <a class="btn" href="https://github.com/wpscholar/agent-studio">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+    <p class="release-note" id="release-note" aria-live="polite"></p>
+    <ul class="reqs" aria-label="Requirements">
+      <li>WordPress 7.0+</li>
+      <li>PHP 8.2+</li>
+      <li>Any AI provider connected in WordPress</li>
+    </ul>
+  </div>
+
+  <section class="alt" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything an agent needs, built on WordPress</h2>
+        <p>Agent Studio uses what's already in core: the Abilities API for what agents can do and the AI Client for whichever model you've connected. Agent Studio never holds your AI keys.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/></svg></div>
+          <h3>Agents</h3>
+          <p>Name, plain-language instructions, triggers, allowed abilities, skills and a model, with a sentence of help on every field. Start from a template: pre-publish reviewer, welcome-email writer or comment moderator.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></div>
+          <h3>Triggers</h3>
+          <p>A post changes status, a user registers, a comment arrives, a schedule comes round, a signed webhook is called, someone messages the agent, or another plugin fires its own event. Or click Run now.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4 2.5-2.5z"/></svg></div>
+          <h3>Abilities</h3>
+          <p>Anything a plugin registers with the WordPress Abilities API can be given to an agent. Starter abilities cover posts, comments, users, private notes and email, so agents are useful on a plain site.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg></div>
+          <h3>Skills</h3>
+          <p>Reusable SKILL.md-style instructions. Agents see each skill's "when to use it" line and load the full text only when needed. Import, download, and restore earlier versions.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1 1"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1-1"/></svg></div>
+          <h3>Connections</h3>
+          <p>Paste an MCP server's address and its tools become abilities. Protected servers sign in with OAuth or an API key, and anything not marked read-only needs approval.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
+          <h3>Channels</h3>
+          <p>Talk to agents in Slack or Telegram, and get push notifications with Approve and Reject buttons through ntfy. Only people you let in can chat.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div>
+          <h3>Approvals</h3>
+          <p>Reads run freely. Writes, destructive actions and anything that reaches outside your site can pause the run until you approve, from the run screen, email, chat or WP-CLI.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+          <h3>Run log</h3>
+          <p>Every run keeps its trigger data, steps, tool calls, results and token use. Old runs are pruned after 30 days.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6M12 19h8"/></svg></div>
+          <h3>For developers</h3>
+          <p>WP-CLI commands, signed webhooks, and filters and actions for adding your own triggers, channels, connection types and model clients.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>How a run works</h2>
+        <p>Agents work in the background, so the page save, signup or webhook that started one returns right away.</p>
+      </div>
+      <ol class="steps">
+        <li><strong>Something happens on your site</strong><span>An event matches an active agent's trigger. Duplicate checks, an hourly limit and a loop guard run first.</span></li>
+        <li><strong>The run is queued</strong><span>It's stored and handed to Action Scheduler if you have it, or WP-Cron otherwise.</span></li>
+        <li><strong>The agent acts as a real user</strong><span>Every ability checks that user's permissions, so an agent can never do more than the account you gave it.</span></li>
+        <li><strong>The model works with only the tools you allowed</strong><span>It sees the instructions, the event data and its allowed abilities, and calls tools until it's done or reaches its step limit.</span></li>
+        <li><strong>You approve what matters</strong><span>A tool that needs approval pauses the run and notifies you. Approve or reject, and the run carries on.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="alt" id="safety">
+    <div class="wrap two-col">
+      <div class="section-head">
+        <h2>Careful by default</h2>
+        <p>AI on a live site needs guardrails. Agent Studio is built so that the worst case is a run waiting for your approval.</p>
+      </div>
+      <ul class="checks">
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><div><strong>Least privilege</strong><span>Agents call only the abilities on their allowlist, as the user they act as.</span></div></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><div><strong>Event data is treated as data</strong><span>Post content, comments and webhook bodies are labelled as untrusted, never as instructions.</span></div></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><div><strong>No runaway chains</strong><span>Events caused by an agent's own actions never start agents.</span></div></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><div><strong>Limits on every agent</strong><span>A step limit per run and a cap on runs per hour.</span></div></li>
+        <li><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><div><strong>Secrets stay secret</strong><span>Tokens use the WordPress Secrets API when available, and are encrypted until then.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Install</h2>
+        <p>Once it's installed, new versions show up under Dashboard → Updates like any other plugin, and you can update with one click or turn on automatic updates.</p>
+      </div>
+      <div class="install">
+        <article class="card">
+          <h3>From your dashboard</h3>
+          <p><a href="https://github.com/wpscholar/agent-studio/releases/latest/download/agent-studio.zip">Download the latest zip</a>, then go to <strong>Plugins → Add New → Upload Plugin</strong>, choose the file, and activate it.</p>
+        </article>
+        <article class="card">
+          <h3>With WP-CLI</h3>
+          <p>Install and activate the latest release in one step:</p>
+          <pre class="wrap-code"><code>wp plugin install https://github.com/wpscholar/agent-studio/releases/latest/download/agent-studio.zip --activate</code></pre>
+        </article>
+      </div>
+      <p class="note">After activating, connect an AI provider under <strong>Settings → Connectors</strong> if you haven't already, then open <strong>Agents → Abilities</strong> to check your site is ready to run agents.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>Agent Studio · GPL v2 or later</span>
+    <nav aria-label="Project links">
+      <a href="https://github.com/wpscholar/agent-studio">Source</a>
+      <a href="https://github.com/wpscholar/agent-studio/releases">Releases</a>
+      <a href="https://github.com/wpscholar/agent-studio/issues">Report an issue</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// Show which version the download button gets. The button works without this.
+(function () {
+  var note = document.getElementById('release-note');
+  if (!note || !window.fetch) return;
+  fetch('https://api.github.com/repos/wpscholar/agent-studio/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (release) {
+      if (!release || !release.tag_name) return;
+      var text = 'Latest version: ' + release.tag_name.replace(/^v/i, '');
+      if (release.published_at) {
+        var date = new Date(release.published_at);
+        if (!isNaN(date)) text += ' · released ' + date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      note.textContent = text + ' · ';
+      var link = document.createElement('a');
+      link.href = release.html_url;
+      link.textContent = 'What’s new';
+      note.appendChild(link);
+    })
+    .catch(function () {});
+})();
+</script>
+</body>
+</html>
