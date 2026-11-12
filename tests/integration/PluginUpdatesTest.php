@@ -115,6 +115,18 @@ final class PluginUpdatesTest extends WP_UnitTestCase
         $this->assertCount(1, $this->requests);
     }
 
+    public function testAReleaseStillWaitingForItsZipIsCheckedAgainSoon(): void
+    {
+        $release = self::release();
+        $release['assets'] = [];
+        $this->answer = fn (string $url): array => $this->json($release);
+
+        $this->assertNull($this->updates()->latest());
+
+        $expires = (int) get_option('_site_transient_timeout_' . PluginUpdates::CACHE);
+        $this->assertLessThanOrEqual(time() + HOUR_IN_SECONDS, $expires);
+    }
+
     public function testFillsTheViewDetailsWindow(): void
     {
         $info = $this->updates()->details(false, 'plugin_information', (object) ['slug' => 'agent-studio']);

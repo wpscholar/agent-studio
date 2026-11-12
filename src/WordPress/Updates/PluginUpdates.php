@@ -234,7 +234,9 @@ final class PluginUpdates
             return null;
         }
 
-        set_site_transient(self::CACHE, ['release' => $release?->toArray()], self::FRESH_FOR);
+        // A just-published release has no zip until the release workflow attaches
+        // it, so look again sooner when nothing installable was found.
+        set_site_transient(self::CACHE, ['release' => $release?->toArray()], $release === null ? self::RETRY_AFTER : self::FRESH_FOR);
 
         return $release;
     }

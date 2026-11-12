@@ -1,7 +1,7 @@
 // Release checks run by .github/workflows/release.yml.
 //
 //   node scripts/verify-release.mjs version <tag>
-//     The tag must match every place the plugin states its version. WordPress
+//     The release's tag (an optional leading v is ignored) must match every place the plugin states its version. WordPress
 //     compares the release tag with the installed header Version, so a mismatch
 //     would offer the same update forever (or never).
 //
@@ -15,7 +15,9 @@ import { readFileSync } from 'node:fs';
 const SLUG = 'agent-studio';
 const MAIN = `${SLUG}.php`;
 
-const [mode, tag, zipPath] = process.argv.slice(2);
+const [mode, rawTag, zipPath] = process.argv.slice(2);
+// Release tags may carry a leading v (v1.2.3); the plugin version never does.
+const tag = rawTag?.replace(/^[vV]/, '');
 const errors = [];
 
 function fail(message) {
@@ -33,7 +35,7 @@ function versionsIn(phpSource) {
 
 if (!tag || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(tag)) {
 	console.error(
-		`Release tags are bare semver such as 1.2.3 or 2.0.0-rc.1; got "${tag ?? ''}".`,
+		`Release tags are semver such as 1.2.3, v1.2.3 or 2.0.0-rc.1; got "${rawTag ?? ''}".`,
 	);
 	process.exit(1);
 }
