@@ -1,23 +1,46 @@
 name: Release
+# Runs when a GitHub release is published (including pre-releases), not when a
+# tag is pushed. Draft releases do not trigger it. The release's tag names the
+# version; the workflow builds that commit and attaches the plugin zip.
 on:
-  push:
-    tags: ['[0-9]+.[0-9]+.[0-9]+*']
+  release:
+    types: [published]
 permissions:
   contents: write
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
       - uses: actions/setup-node@v7
         with: { node-version-file: '.nvmrc', cache: 'npm' }
+      # Sites compare the release version with the installed plugin's header
+      # Version, so every version string in the repo must already match it.
+      - name: Check the release tag matches the plugin version
+        run: |
+          node scripts/verify-release.mjs version "$TAG"
+          echo "VERSION=${TAG#[vV]}" >> "$GITHUB_ENV"
       - uses: shivammathur/setup-php@v2
         with: { php-version: '8.3', tools: 'composer:v2' }
-      - run: composer install --no-dev --prefer-dist --no-interaction
+      - run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
       - run: npm ci
       - run: npm run build
       - run: npm run package
-      - uses: softprops/action-gh-release@v3
-        with:
-          files: build/*.zip
-          generate_release_notes: true
+      # The updater installs this exact zip, so check it is a complete plugin.
+      - name: Check the release zip
+        run: node scripts/verify-release.mjs zip "$TAG" "build/agent-studio-$VERSION.zip"
+      - name: Attach the zip to the release
+        run: gh release upload "$TAG" "build/agent-studio-$VERSION.zip" --clobber --repo "$GITHUB_REPOSITORY"
+      # A published release without its zip offers sites nothing, so turn it
+      # back into a draft. Fix the problem, then publish it again to rebuild.
+      - name: Return the release to draft
+        if: failure()
+        run: gh release edit "$TAG" --draft=true --repo "$GITHUB_REPOSITORY"

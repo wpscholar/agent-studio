@@ -26,8 +26,11 @@ mkdirSync(distRoot, { recursive: true });
 if (existsSync(stageDir)) rmSync(stageDir, { recursive: true, force: true });
 if (existsSync(zipPath)) rmSync(zipPath);
 
-const args = ['-rLptc', '--delete', '--exclude-from=.distignore'];
+// rsync uses the first rule that matches a path, so .distinclude must come
+// before .distignore for its re-includes to win.
+const args = ['-rLptc', '--delete'];
 if (existsSync('.distinclude')) args.push('--include-from=.distinclude');
+args.push('--exclude-from=.distignore');
 args.push('./', `${stageDir}/`);
 
 execSync(`rsync ${args.join(' ')}`, { stdio: 'inherit' });
