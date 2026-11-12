@@ -28,6 +28,7 @@ services:
       - node-modules:/workspace/node_modules
       - wp-data:/var/www/html
       - ../:/var/www/html/wp-content/plugins/agent-studio:cached
+      - ./mu-plugins/dev-loopback.php:/var/www/html/wp-content/mu-plugins/dev-loopback.php:ro
     command: sleep infinity
     depends_on:
       db: { condition: service_healthy }
@@ -47,6 +48,8 @@ services:
     volumes:
       - wp-data:/var/www/html
       - ../:/var/www/html/wp-content/plugins/agent-studio:cached
+      # Lets WP-Cron start inside Docker; see the file for why.
+      - ./mu-plugins/dev-loopback.php:/var/www/html/wp-content/mu-plugins/dev-loopback.php:ro
     depends_on:
       db: { condition: service_healthy }
   db:
