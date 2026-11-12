@@ -99,6 +99,8 @@ use AgentStudio\WordPress\Rest\AgentsController;
 use AgentStudio\WordPress\Rest\CatalogController;
 use AgentStudio\WordPress\Rest\SkillsController;
 use AgentStudio\WordPress\Rest\WebhookController;
+use AgentStudio\WordPress\Updates\PluginUpdates;
+use AgentStudio\Application\Updates\GitHubReleases;
 
 /**
  * Builds the object graph and connects it to WordPress.
@@ -128,6 +130,7 @@ final class Plugin
         $container->get(ConnectionHooks::class)->register();
         $container->get(AgentAbilities::class)->register();
         $container->get(StarterAbilities::class)->register();
+        $container->get(PluginUpdates::class)->register();
 
         if (is_admin()) {
             $container->get(Assets::class)->register();
@@ -321,6 +324,28 @@ final class Plugin
         );
         $c->set(SecretStore::class, static fn (): SecretStore => SecretStoreFactory::make());
         $c->set(HttpClient::class, static fn (): HttpClient => new WordPressHttpClient());
+        $c->set(
+            PluginUpdates::class,
+            static fn (Container $c): PluginUpdates => new PluginUpdates(
+                new GitHubReleases(
+                    $c->get(HttpClient::class),
+                    PluginUpdates::REPOSITORY,
+                    PluginUpdates::SLUG,
+                    /**
+                     * Filters the GitHub token used to find and download updates.
+                     * Only needed while the repository is private; defaults to the
+                     * AGENT_STUDIO_GITHUB_TOKEN constant from wp-config.php.
+                     *
+                     * @param string $token
+                     */
+                    (string) apply_filters(
+                        'agent_studio_github_token',
+                        defined('AGENT_STUDIO_GITHUB_TOKEN') ? (string) constant('AGENT_STUDIO_GITHUB_TOKEN') : ''
+                    )
+                ),
+                AGENT_STUDIO_FILE
+            )
+        );
         $c->set(PendingSignInStore::class, static fn (): PendingSignInStore => new TransientPendingSignInStore());
         $c->set(ConnectionRepository::class, static fn (): ConnectionRepository => new WordPressConnectionRepository());
         $c->set(

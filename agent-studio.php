@@ -13,6 +13,7 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       agent-studio
  * Domain Path:       /languages
+ * Update URI:        https://github.com/wpscholar/agent-studio
  */
 
 declare(strict_types=1);
