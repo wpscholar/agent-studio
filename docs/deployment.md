@@ -15,7 +15,7 @@ Publishing (the `release: published` event) runs `release.yml`. Drafts do not. T
 3. `npm ci && npm run build` populates `build/` with compiled assets.
 4. `npm run package` rsyncs the working tree into `dist/<slug>/` honoring `.distignore` (and `.distinclude` if present), then zips it to `build/<slug>-<version>.zip`.
 5. Checks the zip (`scripts/verify-release.mjs zip`): it has a single `agent-studio/` folder, `vendor/autoload.php` and the built admin script, the right version, and no dev files.
-6. Uploads the zip to the release as an asset.
+6. Uploads the zip to the release twice: as `agent-studio-<version>.zip`, which the plugin's updater installs, and as `agent-studio.zip`. GitHub serves the newest full release's copy of the second at https://github.com/wpscholar/agent-studio/releases/latest/download/agent-studio.zip, so links to that address never need updating.
 
 If any step fails, the workflow turns the release back into a draft, so sites are never pointed at a release without a zip. Fix the problem (move the tag if the code must change), then publish the draft again to rerun it.
 
@@ -41,7 +41,7 @@ Or provide it through the `agent_studio_github_token` filter. The token is sent 
 
 ## Install on a site
 
-- Manual: download the zip from the GitHub release; upload via WP admin.
+- Manual: download [the latest zip](https://github.com/wpscholar/agent-studio/releases/latest/download/agent-studio.zip) and upload it under Plugins → Add New → Upload Plugin.
 - Composer (recommended for site repos):
   ```json
   {
