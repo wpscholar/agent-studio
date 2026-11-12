@@ -5,20 +5,13 @@ declare(strict_types=1);
 namespace AgentStudio\Infrastructure;
 
 use stdClass;
-use WordPress\AiClient\Messages\DTO\Message;
-use WordPress\AiClient\Messages\DTO\MessagePart;
-use WordPress\AiClient\Messages\Enums\MessageRoleEnum;
 use WordPress\AiClient\Results\DTO\GenerativeAiResult;
-use WordPress\AiClient\Tools\DTO\FunctionCall;
 use WordPress\AiClient\Tools\DTO\FunctionDeclaration;
-use WordPress\AiClient\Tools\DTO\FunctionResponse;
 use AgentStudio\Contracts\Model\ModelException;
 use AgentStudio\Contracts\Model\ModelRequest;
 use AgentStudio\Contracts\Model\ModelResponse;
 use AgentStudio\Contracts\Model\ToolSpec;
 use AgentStudio\Contracts\ModelClient;
-use AgentStudio\Domain\Conversation\Message as ConversationMessage;
-use AgentStudio\Domain\Conversation\ToolCall;
 
 /**
  * Talks to a model through the WordPress 7.0 AI Client, so agents use whichever
@@ -75,7 +68,7 @@ final class CoreAiModelClient implements ModelClient
             $builder->using_function_declarations(...$declarations);
         }
 
-        $history = $this->history($request->messages);
+        $history = (new AiClientMessages())->toHistory($request->messages);
         if ($history !== []) {
             $builder->with_history(...$history);
         }
@@ -129,79 +122,9 @@ final class CoreAiModelClient implements ModelClient
         return $schema;
     }
 
-    /**
-     * @param list<ConversationMessage> $messages
-     *
-     * @return list<Message>
-     */
-    private function history(array $messages): array
-    {
-        $history = [];
-
-        foreach ($messages as $message) {
-            $mapped = $this->mapMessage($message);
-            if ($mapped !== null) {
-                $history[] = $mapped;
-            }
-        }
-
-        return $history;
-    }
-
-    private function mapMessage(ConversationMessage $message): ?Message
-    {
-        switch ($message->role) {
-            case ConversationMessage::ROLE_USER:
-                return $message->content === ''
-                    ? null
-                    : new Message(MessageRoleEnum::user(), [new MessagePart($message->content)]);
-
-            case ConversationMessage::ROLE_ASSISTANT:
-                $parts = [];
-                if ($message->content !== '') {
-                    $parts[] = new MessagePart($message->content);
-                }
-
-                foreach ($message->toolCalls as $call) {
-                    // An empty argument map must reach the provider as {} and not [].
-                    $args = $call->input === [] ? new stdClass() : $call->input;
-                    $parts[] = new MessagePart(new FunctionCall($call->id, $call->name, $args));
-                }
-
-                return $parts === [] ? null : new Message(MessageRoleEnum::model(), $parts);
-
-            case ConversationMessage::ROLE_TOOL:
-                return new Message(
-                    MessageRoleEnum::user(),
-                    [new MessagePart(new FunctionResponse($message->toolCallId, $message->toolName, $message->content))]
-                );
-        }
-
-        return null;
-    }
-
     private function parse(GenerativeAiResult $result): ModelResponse
     {
-        $text = '';
-        $toolCalls = [];
-
-        foreach ($result->toMessage()->getParts() as $part) {
-            $partText = $part->getText();
-            if ($partText !== null) {
-                $text .= $partText;
-            }
-
-            $call = $part->getFunctionCall();
-            if ($call !== null) {
-                $args = $call->getArgs();
-                $toolCalls[] = new ToolCall(
-                    (string) ($call->getId() ?? $call->getName()),
-                    (string) $call->getName(),
-                    is_array($args) ? $args : []
-                );
-            }
-        }
-
+        [$text, $toolCalls] = (new AiClientMessages())->fromAiClient($result->toMessage());
         $usage = $result->getTokenUsage();
 
         return new ModelResponse($text, $toolCalls, $usage->getPromptTokens(), $usage->getCompletionTokens());

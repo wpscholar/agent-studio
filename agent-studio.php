@@ -4,7 +4,7 @@
  * Plugin Name:       Agent Studio
  * Plugin URI:        https://github.com/wpscholar/agent-studio
  * Description:       Build AI agents inside WordPress. Trigger them from site events, webhooks or direct calls, and give them your site's abilities and skills.
- * Version:           0.1.0
+ * Version:           0.1.1
  * Requires at least: 7.0
  * Requires PHP:      8.2
  * Author:            Micah Wood
@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 defined('ABSPATH') || exit;
 
-define('AGENT_STUDIO_VERSION', '0.1.0');
+define('AGENT_STUDIO_VERSION', '0.1.1');
 define('AGENT_STUDIO_FILE', __FILE__);
 define('AGENT_STUDIO_PATH', plugin_dir_path(__FILE__));
 define('AGENT_STUDIO_URL', plugin_dir_url(__FILE__));
