@@ -3,8 +3,12 @@
 # Anything not listed here gets shipped, INCLUDING build/ (compiled assets) and
 # vendor/ (populated by `composer install --no-dev` at release time).
 #
-# Customize: many plugins use assets/ as Vite source. If your assets/ contents
-# are only build source (with output in build/), add `assets` below.
+# assets/src is the admin app's source; Vite compiles it into build/assets.
+# assets/admin.css is loaded directly, so the rest of assets/ ships.
+
+# Every hidden file and folder at the top level (.git, .github, .claude, ...),
+# including any added later. Re-include one in .distinclude if it must ship.
+/.*
 
 # VCS
 .git
@@ -47,6 +51,7 @@ test-results
 coverage
 
 # Build tooling
+Makefile
 vite.config.js
 eslint.config.mjs
 .prettierrc.json
@@ -55,6 +60,9 @@ eslint.config.mjs
 stubs
 bin
 scripts
+
+# Admin app source (compiled into build/assets)
+/assets/src
 
 # Docs and agent files
 docs

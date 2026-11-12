@@ -81,6 +81,7 @@ if (mode === 'version') {
 		'uninstall.php',
 		'vendor/autoload.php',
 		'build/assets/admin.js',
+		'assets/admin.css',
 	]) {
 		if (!has(required)) fail(`The zip is missing ${SLUG}/${required}.`);
 	}
@@ -90,7 +91,8 @@ if (mode === 'version') {
 		'vendor/squizlabs/',
 		'node_modules/',
 		'tests/',
-		'.github/',
+		'assets/src/',
+		'Makefile',
 		'composer.json',
 		'package.json',
 	]) {
@@ -100,6 +102,12 @@ if (mode === 'version') {
 	}
 	if (entries.some((e) => /\.zip$/.test(e)))
 		fail('The zip contains another zip.');
+	const hidden = entries.filter((e) =>
+		e.split('/').some((part) => part.startsWith('.')),
+	);
+	if (hidden.length) {
+		fail(`The zip contains hidden files: ${hidden.slice(0, 5).join(', ')}.`);
+	}
 
 	if (has(MAIN)) {
 		const shipped = execFileSync('unzip', ['-p', zipPath, `${SLUG}/${MAIN}`], {
